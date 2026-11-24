@@ -145,10 +145,6 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button id="btn-open-api-key" type="button" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition flex items-center gap-1.5" title="Gemini API 키 설정">
-          <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-          <span id="api-key-status-label">API 키 설정</span>
-        </button>
         <button id="btn-load-sample" type="button" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5">
           <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           샘플 단어장 체험
@@ -177,14 +173,14 @@
 
       <!-- Dropzone -->
       <label id="drop-zone" for="image-input" class="group relative flex flex-col items-center justify-center w-full min-h-[150px] border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-2xl bg-slate-50/70 hover:bg-indigo-50/30 transition cursor-pointer p-5 text-center">
-        <input id="image-input" type="file" accept="image/*,.dng" multiple class="hidden" />
+        <input id="image-input" type="file" accept="image/*" multiple class="hidden" />
         <div class="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-indigo-600 group-hover:scale-105 transition mb-3">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
         </div>
         <p class="text-sm font-bold text-slate-800">클릭하여 단어장 사진을 선택하거나 여기에 드래그하세요</p>
-        <p class="text-xs text-slate-500 mt-1">여러 장의 사진을 한 번에 선택할 수 있습니다 (JPG, PNG, WEBP, HEIC, DNG)</p>
+        <p class="text-xs text-slate-500 mt-1">여러 장의 사진을 한 번에 선택할 수 있습니다 (JPG, PNG, WEBP, HEIC)</p>
       </label>
 
       <!-- Selected Images Preview Grid -->
@@ -214,12 +210,7 @@
               <p id="loading-sub" class="text-xs text-indigo-700 mt-0.5 truncate">단원 제목(Unit/Day/Lesson/과 등)과 표제어·품사·뜻을 추출 중입니다.</p>
             </div>
           </div>
-          <div class="flex items-center gap-2.5 shrink-0">
-            <span id="loading-percent-text" class="text-sm sm:text-base font-extrabold text-indigo-700 font-en">0%</span>
-            <button id="btn-cancel-extraction" type="button" class="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-bold text-xs transition">
-              추출 취소
-            </button>
-          </div>
+          <span id="loading-percent-text" class="text-sm sm:text-base font-extrabold text-indigo-700 font-en shrink-0">0%</span>
         </div>
         <div class="w-full h-2 rounded-full bg-indigo-100 overflow-hidden">
           <div id="loading-progress-bar" class="h-full bg-indigo-600 transition-all duration-150 rounded-full" style="width: 0%;"></div>
@@ -575,39 +566,6 @@
     </div>
   </div>
 
-  <!-- Gemini API Key Config Modal -->
-  <div id="api-key-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-amber-50/70">
-        <div class="flex items-center gap-2">
-          <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-          <h3 class="text-base font-extrabold text-slate-900">Gemini API 키 설정</h3>
-        </div>
-        <button id="btn-close-api-modal" type="button" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200/70 transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <div class="p-6 space-y-4">
-        <p class="text-xs text-slate-600 leading-relaxed">
-          단어장 사진 AI 분석을 위해 Gemini API 키를 입력하세요. 입력한 키는 브라우저의 <code class="px-1 py-0.5 rounded bg-slate-100 text-slate-800">localStorage</code>에만 저장되며 외부 서버로 별도 전송되지 않습니다.
-        </p>
-        <div>
-          <label for="gemini-api-key-input" class="block text-xs font-extrabold text-slate-700 mb-1.5">Gemini API Key</label>
-          <input id="gemini-api-key-input" type="password" placeholder="AIza..." autocomplete="off" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        </div>
-      </div>
-      <div class="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
-        <button id="btn-clear-api-key" type="button" class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs sm:text-sm transition">
-          키 삭제
-        </button>
-        <div class="flex items-center gap-2">
-          <button id="btn-cancel-api-modal" type="button" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs sm:text-sm transition">취소</button>
-          <button id="btn-save-api-key" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition">저장</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
     /**
      * =========================================================================
@@ -617,36 +575,20 @@
 
     // Application State
     const ACTIVITY_LOG_STORAGE_KEY = 'smart_vocab_test_activity_logs_v1';
-    const GEMINI_API_KEY_STORAGE_KEY = 'smart_vocab_gemini_api_key_v1';
-    const REQUEST_TIMEOUT_MS = 25000;
-    const MAX_API_RETRIES = 2;
 
-    function getConfiguredApiKey() {
+    function loadPersistedActivityLogs() {
       try {
-        const savedKey = (window.localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || '').trim();
-        if (savedKey) return savedKey;
+        const raw = window.localStorage.getItem(ACTIVITY_LOG_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .filter(item => item && typeof item.action === 'string' && typeof item.timestamp === 'string')
+          .map(item => ({ action: item.action, timestamp: item.timestamp }));
       } catch (err) {
-        console.warn('Failed to read Gemini API key from localStorage:', err);
+        console.warn('Failed to load persisted activity logs:', err);
+        return [];
       }
-      if (typeof window.__GEMINI_API_KEY__ === 'string' && window.__GEMINI_API_KEY__.trim()) {
-        return window.__GEMINI_API_KEY__.trim();
-      }
-      return '';
-    }
-
-    function setConfiguredApiKey(newKey) {
-      const cleaned = String(newKey || '').trim();
-      try {
-        if (cleaned) {
-          window.localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, cleaned);
-        } else {
-          window.localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
-        }
-      } catch (err) {
-        console.warn('Failed to persist Gemini API key:', err);
-      }
-      updateApiKeyBadgeUI();
-    }
     }
 
     function savePersistedActivityLogs(logs) {
@@ -681,7 +623,6 @@
       btnExtractWords: document.getElementById('btn-extract-words'),
       btnExtractWordsText: document.getElementById('btn-extract-words-text'),
       extractionLoading: document.getElementById('extraction-loading'),
-      btnCancelExtraction: document.getElementById('btn-cancel-extraction'),
       loadingPercentText: document.getElementById('loading-percent-text'),
       loadingProgressBar: document.getElementById('loading-progress-bar'),
       uploadAccessLogSection: document.getElementById('upload-access-log-section'),
@@ -689,14 +630,6 @@
       loadingTitle: document.getElementById('loading-title'),
       loadingSub: document.getElementById('loading-sub'),
       btnLoadSample: document.getElementById('btn-load-sample'),
-      btnOpenApiKey: document.getElementById('btn-open-api-key'),
-      apiKeyStatusLabel: document.getElementById('api-key-status-label'),
-      apiKeyModal: document.getElementById('api-key-modal'),
-      geminiApiKeyInput: document.getElementById('gemini-api-key-input'),
-      btnCloseApiModal: document.getElementById('btn-close-api-modal'),
-      btnCancelApiModal: document.getElementById('btn-cancel-api-modal'),
-      btnClearApiKey: document.getElementById('btn-clear-api-key'),
-      btnSaveApiKey: document.getElementById('btn-save-api-key'),
       btnOpenWordEditor: document.getElementById('btn-open-word-editor'),
       wordCountBadge: document.getElementById('word-count-badge'),
 
@@ -809,57 +742,142 @@
       els.btnExtractWordsText.textContent = '테스트 문제지 생성';
     }
 
-    function updateApiKeyBadgeUI() {
-      if (!els.apiKeyStatusLabel || !els.btnOpenApiKey) return;
-      const hasKey = Boolean(getConfiguredApiKey());
-      if (hasKey) {
-        els.apiKeyStatusLabel.textContent = 'API 키 연결됨';
-        els.btnOpenApiKey.className = 'px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center gap-1.5';
-      } else {
-        els.apiKeyStatusLabel.textContent = 'API 키 설정';
-        els.btnOpenApiKey.className = 'px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition flex items-center gap-1.5';
+    let extractionProgressTimer = null;
+    let currentExtractionPercent = 0;
+    let targetExtractionPercent = 0;
+
+    function setExtractionProgress(targetPct, statusSubText) {
+      targetExtractionPercent = Math.max(currentExtractionPercent, Math.min(100, Math.round(targetPct)));
+      if (els.loadingTitle) {
+        els.loadingTitle.textContent = '사진 분석 및 문제지 생성중';
+      }
+      if (statusSubText && els.loadingSub) {
+        els.loadingSub.textContent = statusSubText;
+      }
+      if (!extractionProgressTimer) {
+        extractionProgressTimer = setInterval(() => {
+          if (currentExtractionPercent < targetExtractionPercent) {
+            const step = Math.max(1, Math.ceil((targetExtractionPercent - currentExtractionPercent) * 0.25));
+            currentExtractionPercent = Math.min(targetExtractionPercent, currentExtractionPercent + step);
+            if (els.loadingPercentText) {
+              els.loadingPercentText.textContent = `${currentExtractionPercent}%`;
+            }
+            if (els.loadingProgressBar) {
+              els.loadingProgressBar.style.width = `${currentExtractionPercent}%`;
+            }
+          }
+        }, 70);
       }
     }
 
-    function openApiKeyModal() {
-      if (!els.apiKeyModal || !els.geminiApiKeyInput) return;
-      els.geminiApiKeyInput.value = getConfiguredApiKey();
-      els.apiKeyModal.classList.remove('hidden');
-      els.geminiApiKeyInput.focus();
+    function completeExtractionProgress() {
+      targetExtractionPercent = 100;
+      currentExtractionPercent = 100;
+      if (extractionProgressTimer) {
+        clearInterval(extractionProgressTimer);
+        extractionProgressTimer = null;
+      }
+      if (els.loadingTitle) {
+        els.loadingTitle.textContent = '사진 분석 및 문제지 생성중';
+      }
+      if (els.loadingPercentText) {
+        els.loadingPercentText.textContent = '100%';
+      }
+      if (els.loadingProgressBar) {
+        els.loadingProgressBar.style.width = '100%';
+      }
     }
 
-    function closeApiKeyModal() {
-      if (!els.apiKeyModal) return;
-      els.apiKeyModal.classList.add('hidden');
+    function resetExtractionProgress() {
+      if (extractionProgressTimer) {
+        clearInterval(extractionProgressTimer);
+        extractionProgressTimer = null;
+      }
+      currentExtractionPercent = 0;
+      targetExtractionPercent = 0;
+      if (els.loadingPercentText) {
+        els.loadingPercentText.textContent = '0%';
+      }
+      if (els.loadingProgressBar) {
+        els.loadingProgressBar.style.width = '0%';
+      }
     }
 
-    if (els.btnOpenApiKey) els.btnOpenApiKey.addEventListener('click', openApiKeyModal);
-    if (els.btnCloseApiModal) els.btnCloseApiModal.addEventListener('click', closeApiKeyModal);
-    if (els.btnCancelApiModal) els.btnCancelApiModal.addEventListener('click', closeApiKeyModal);
-    if (els.apiKeyModal) {
-      els.apiKeyModal.addEventListener('click', (e) => {
-        if (e.target === els.apiKeyModal) closeApiKeyModal();
-      });
+    function getCurrentSheetTitlePrefix() {
+      return `[${getCurrentSheetTitle()}] `;
     }
-    if (els.btnSaveApiKey) {
-      els.btnSaveApiKey.addEventListener('click', () => {
-        const keyVal = (els.geminiApiKeyInput?.value || '').trim();
-        if (!keyVal) {
-          showToast('유효한 Gemini API 키를 입력해주세요.', 'warning');
-          return;
-        }
-        setConfiguredApiKey(keyVal);
-        closeApiKeyModal();
-        showToast('Gemini API 키가 안전하게 저장되었습니다.', 'success');
-      });
+
+    function formatActionWithSheetTitle(actionText) {
+      const raw = String(actionText || '').trim();
+      const titleMatch = raw.match(/^(채점완료|문제 초기화|정답지 보기)/);
+      if (!titleMatch) return raw;
+      const prefix = getCurrentSheetTitlePrefix();
+      if (raw.startsWith(prefix)) return raw;
+      return `${prefix}${raw}`;
     }
-    if (els.btnClearApiKey) {
-      els.btnClearApiKey.addEventListener('click', () => {
-        setConfiguredApiKey('');
-        if (els.geminiApiKeyInput) els.geminiApiKeyInput.value = '';
-        closeApiKeyModal();
-        showToast('저장된 Gemini API 키를 삭제했습니다.', 'info');
-      });
+
+    function recordWebAccessOncePerSession() {
+      if (sessionStorage.getItem('smart_vocab_web_access_recorded_v1')) return;
+      sessionStorage.setItem('smart_vocab_web_access_recorded_v1', '1');
+      appendActivityLog('웹 접속');
+    }
+
+    function hideUploadAccessLogAfterSheetCreated() {
+      if (els.uploadAccessLogSection) {
+        els.uploadAccessLogSection.classList.add('hidden');
+      }
+    }
+
+    // Toast helper (Never uses alert())
+    let toastTimeout = null;
+    function showToast(message, type = 'info') {
+      els.toastMessage.textContent = message;
+      els.toastContent.className = 'px-4 py-3 rounded-xl shadow-lg border text-sm font-bold flex items-center gap-2.5 ';
+      if (type === 'success') {
+        els.toastContent.className += 'bg-emerald-900 text-white border-emerald-700';
+      } else if (type === 'error') {
+        els.toastContent.className += 'bg-rose-900 text-white border-rose-700';
+      } else if (type === 'warning') {
+        els.toastContent.className += 'bg-amber-900 text-white border-amber-700';
+      } else {
+        els.toastContent.className += 'bg-slate-900 text-white border-slate-700';
+      }
+      els.toastBanner.classList.remove('hidden');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        els.toastBanner.classList.add('hidden');
+      }, 3400);
+    }
+
+    // Activity Log Recorder
+    function appendActivityLog(actionLabel) {
+      const timestamp = getFormattedDateTime();
+      const formattedAction = formatActionWithSheetTitle(actionLabel);
+      state.activityLogs.push({ action: formattedAction, timestamp });
+      savePersistedActivityLogs(state.activityLogs);
+      renderActivityLogs();
+    }
+
+    function parseLogTimestampToMs(ts) {
+      if (typeof ts !== 'string') return 0;
+      const normalized = ts.trim().replace(' ', 'T');
+      const parsed = Date.parse(normalized);
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
+
+    function getOrderedActivityLogsNewestFirst() {
+      return state.activityLogs
+        .map((log, originalIndex) => ({
+          ...log,
+          action: formatActionWithSheetTitle(log.action),
+          seqNum: originalIndex + 1,
+          ms: parseLogTimestampToMs(log.timestamp),
+          originalIndex
+        }))
+        .sort((a, b) => {
+          if (b.ms !== a.ms) return b.ms - a.ms;
+          return b.originalIndex - a.originalIndex;
+        });
     }
 
     function getLogRowColorClass(actionText) {
@@ -962,16 +980,10 @@
     // =========================================================================
     // 1. MULTI-IMAGE UPLOAD & PREVIEW HANDLING
     // =========================================================================
-    function isSupportedImageFile(file) {
-      if (!file) return false;
-      if (file.type && file.type.startsWith('image/')) return true;
-      return /\.(jpe?g|png|webp|heic|heif|gif|bmp|dng)$/i.test(file.name || '');
-    }
-
     function handleFilesAdded(fileList) {
-      const files = Array.from(fileList).filter(isSupportedImageFile);
+      const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
       if (files.length === 0) {
-        showToast('이미지 파일(JPG, PNG, WEBP, HEIC, DNG 등)만 업로드할 수 있습니다.', 'warning');
+        showToast('이미지 파일만 업로드할 수 있습니다.', 'warning');
         return;
       }
       state.selectedFiles = [...state.selectedFiles, ...files];
@@ -990,29 +1002,18 @@
       els.imagePreviewGrid.innerHTML = '';
 
       state.selectedFiles.forEach((file, index) => {
-        const isDng = /\.dng$/i.test(file.name || '');
-        const url = isDng ? '' : URL.createObjectURL(file);
+        const url = URL.createObjectURL(file);
         const card = document.createElement('div');
         card.className = 'relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-xs';
-        card.innerHTML = isDng
-          ? `
-            <div class="w-full h-full flex flex-col items-center justify-center bg-slate-200/80 text-slate-700 p-2 text-center">
-              <span class="px-2 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-extrabold mb-1">DNG</span>
-              <span class="text-[10px] font-bold break-all line-clamp-2">${escapeHtml(file.name)}</span>
-            </div>
-            <button type="button" data-idx="${index}" class="btn-remove-img absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold transition" title="삭제">
-              ✕
-            </button>
-          `
-          : `
-            <img src="${url}" alt="단어장 사진 ${index + 1}" class="w-full h-full object-cover" />
-            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1">
-              <p class="text-[10px] text-white font-semibold truncate">${escapeHtml(file.name)}</p>
-            </div>
-            <button type="button" data-idx="${index}" class="btn-remove-img absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold transition" title="삭제">
-              ✕
-            </button>
-          `;
+        card.innerHTML = `
+          <img src="${url}" alt="단어장 사진 ${index + 1}" class="w-full h-full object-cover" />
+          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1">
+            <p class="text-[10px] text-white font-semibold truncate">${escapeHtml(file.name)}</p>
+          </div>
+          <button type="button" data-idx="${index}" class="btn-remove-img absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold transition" title="삭제">
+            ✕
+          </button>
+        `;
         els.imagePreviewGrid.appendChild(card);
       });
 
@@ -1025,125 +1026,53 @@
       });
     }
 
-    // Helper: Resize & compress image to base64 JPEG (with safe fallback & timeout for iOS HEIC/DNG)
-    function fileToCompressedBase64(file, maxDim = 1200, quality = 0.78) {
-      return new Promise((resolve, reject) => {
-        throwIfExtractionCancelled();
-        const isDng = /\.dng$/i.test(file.name || '');
-        let settled = false;
-        const finishResolve = (val) => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(fileGuardTimer);
-          resolve(val);
-        };
-        const finishReject = (err) => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(fileGuardTimer);
-          reject(err);
-        };
-        const fileGuardTimer = setTimeout(() => {
-          finishReject(new Error(`${file.name || '사진'} 처리 시간이 초과되었습니다. 더 작은 사진으로 시도해주세요.`));
-        }, 12000);
+    if (els.testTitleInput) {
+      els.testTitleInput.addEventListener('input', () => {
+        state.detectedTitle = (els.testTitleInput.value || '').trim() || '영단어 테스트';
+        updateExtractButtonLabel();
+      });
+    }
 
+    els.imageInput.addEventListener('change', (e) => {
+      handleFilesAdded(e.target.files);
+      e.target.value = '';
+    });
+
+    els.dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      els.dropZone.classList.add('border-indigo-500', 'bg-indigo-50/50');
+    });
+    els.dropZone.addEventListener('dragleave', () => {
+      els.dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/50');
+    });
+    els.dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      els.dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/50');
+      if (e.dataTransfer?.files) {
+        handleFilesAdded(e.dataTransfer.files);
+      }
+    });
+
+    els.btnClearImages.addEventListener('click', () => {
+      state.selectedFiles = [];
+      renderImagePreviews();
+    });
+
+    // Helper: Resize & compress image to base64 JPEG (with safe fallback for iOS HEIC/DNG)
+    function fileToCompressedBase64(file, maxDim = 1400, quality = 0.82) {
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
-          if (isExtractionCancelled) {
-            const err = new Error('추출이 취소되었습니다.');
-            err.name = 'AbortError';
-            finishReject(err);
-            return;
-          }
           const rawDataUrl = reader.result;
-          const rawBase64 = typeof rawDataUrl === 'string' && rawDataUrl.includes(',')
-            ? rawDataUrl.split(',')[1]
-            : '';
-          const fallbackMime = isDng
-            ? 'image/jpeg'
-            : (file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg');
-
-          if (isDng && reader.result instanceof ArrayBuffer) {
-            try {
-              const bytes = new Uint8Array(reader.result);
-              // Search for embedded JPEG SOI (0xFF 0xD8) and EOI (0xFF 0xD9) inside DNG container
-              let bestStart = -1;
-              let bestEnd = -1;
-              for (let i = 0; i < bytes.length - 4; i++) {
-                if (bytes[i] === 0xFF && bytes[i + 1] === 0xD8 && bytes[i + 2] === 0xFF) {
-                  let endIdx = -1;
-                  for (let j = i + 4; j < bytes.length - 1; j++) {
-                    if (bytes[j] === 0xFF && bytes[j + 1] === 0xD9) {
-                      endIdx = j + 2;
-                    }
-                  }
-                  if (endIdx > i + 4096) {
-                    const size = endIdx - i;
-                    if (bestEnd === -1 || size > (bestEnd - bestStart)) {
-                      bestStart = i;
-                      bestEnd = endIdx;
-                    }
-                    break;
-                  }
-                }
-              }
-
-              if (bestStart !== -1 && bestEnd !== -1) {
-                const jpegSlice = bytes.slice(bestStart, bestEnd);
-                const jpegBlob = new Blob([jpegSlice], { type: 'image/jpeg' });
-                const previewImg = new Image();
-                const blobUrl = URL.createObjectURL(jpegBlob);
-                previewImg.onload = () => {
-                  try {
-                    let { width, height } = previewImg;
-                    if (width > maxDim || height > maxDim) {
-                      if (width > height) {
-                        height = Math.round((height * maxDim) / width);
-                        width = maxDim;
-                      } else {
-                        width = Math.round((width * maxDim) / height);
-                        height = maxDim;
-                      }
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(previewImg, 0, 0, width, height);
-                    const outBase64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
-                    URL.revokeObjectURL(blobUrl);
-                    finishResolve({ mimeType: 'image/jpeg', data: outBase64, isDng: true });
-                  } catch (canvasErr) {
-                    URL.revokeObjectURL(blobUrl);
-                    finishResolve({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
-                  }
-                };
-                previewImg.onerror = () => {
-                  URL.revokeObjectURL(blobUrl);
-                  finishResolve({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
-                };
-                previewImg.src = blobUrl;
-                return;
-              }
-
-              finishResolve({ mimeType: fallbackMime, data: '', isDng: true, rawBytes: bytes });
-              return;
-            } catch (dngErr) {
-              console.warn('DNG embedded JPEG scan error:', dngErr);
-            }
-          }
-
-          if (!rawBase64) {
-            finishReject(new Error('파일 읽기에 실패했습니다.'));
-            return;
-          }
+          const rawBase64 = typeof rawDataUrl === 'string' ? rawDataUrl.split(',')[1] : '';
+          const fallbackMime = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg';
 
           const img = new Image();
           img.onload = () => {
             try {
               let { width, height } = img;
               if (!width || !height) {
-                finishResolve({ mimeType: fallbackMime, data: rawBase64 });
+                resolve({ mimeType: fallbackMime, data: rawBase64 });
                 return;
               }
               if (width > maxDim || height > maxDim) {
@@ -1162,190 +1091,23 @@
               ctx.drawImage(img, 0, 0, width, height);
               const dataUrl = canvas.toDataURL('image/jpeg', quality);
               const base64 = dataUrl.split(',')[1];
-              finishResolve({ mimeType: 'image/jpeg', data: base64 });
+              resolve({ mimeType: 'image/jpeg', data: base64 });
             } catch (e) {
-              finishResolve({ mimeType: fallbackMime, data: rawBase64 });
+              resolve({ mimeType: fallbackMime, data: rawBase64 });
             }
           };
           img.onerror = () => {
             if (rawBase64) {
-              finishResolve({ mimeType: fallbackMime, data: rawBase64 });
+              resolve({ mimeType: fallbackMime, data: rawBase64 });
             } else {
-              finishReject(new Error('이미지 파일을 읽을 수 없습니다.'));
+              reject(new Error('이미지 파일을 읽을 수 없습니다.'));
             }
           };
           img.src = rawDataUrl;
         };
-        reader.onerror = () => finishReject(new Error('파일 읽기에 실패했습니다.'));
-        if (isDng && typeof file.arrayBuffer === 'function') {
-          reader.readAsArrayBuffer(file);
-        } else {
-          reader.readAsDataURL(file);
-        }
+        reader.onerror = () => reject(new Error('파일 읽기에 실패했습니다.'));
+        reader.readAsDataURL(file);
       });
-    }
-
-    function loadTesseractScript() {
-      return new Promise((resolve, reject) => {
-        throwIfExtractionCancelled();
-        if (window.Tesseract && typeof window.Tesseract.recognize === 'function') {
-          resolve(window.Tesseract);
-          return;
-        }
-        const ocrLoadTimer = setTimeout(() => {
-          reject(new Error('OCR 엔진 로딩 시간이 초과되었습니다.'));
-        }, 12000);
-        const existing = document.querySelector('script[data-ocr-lib="tesseract"]');
-        if (existing) {
-          existing.addEventListener('load', () => {
-            clearTimeout(ocrLoadTimer);
-            resolve(window.Tesseract);
-          });
-          existing.addEventListener('error', () => {
-            clearTimeout(ocrLoadTimer);
-            reject(new Error('OCR 라이브러리 로드 실패'));
-          });
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        script.async = true;
-        script.setAttribute('data-ocr-lib', 'tesseract');
-        script.onload = () => {
-          clearTimeout(ocrLoadTimer);
-          resolve(window.Tesseract);
-        };
-        script.onerror = () => {
-          clearTimeout(ocrLoadTimer);
-          reject(new Error('OCR 라이브러리 로드 실패'));
-        };
-        document.head.appendChild(script);
-      });
-    }
-
-    function extractAsciiStringsFromDngBytes(rawBytes) {
-      if (!rawBytes || !(rawBytes instanceof Uint8Array)) return '';
-      const chunks = [];
-      let current = '';
-      const step = rawBytes.length > 4000000 ? 2 : 1;
-      for (let i = 0; i < rawBytes.length; i += step) {
-        const b = rawBytes[i];
-        if ((b >= 65 && b <= 90) || (b >= 97 && b <= 122) || (b >= 48 && b <= 57) || b === 32 || b === 45 || b === 39) {
-          current += String.fromCharCode(b);
-          if (current.length > 120) {
-            chunks.push(current);
-            current = '';
-          }
-        } else {
-          if (current.trim().length >= 3) {
-            chunks.push(current.trim());
-          }
-          current = '';
-        }
-      }
-      if (current.trim().length >= 3) chunks.push(current.trim());
-      return chunks.join('\n');
-    }
-
-    async function extractVocabularyViaLocalOcr(imageParts, onProgress) {
-      throwIfExtractionCancelled();
-      if (onProgress) onProgress(52, '브라우저 내장 OCR 엔진을 준비하고 있습니다...');
-      const Tesseract = await loadTesseractScript();
-      throwIfExtractionCancelled();
-
-      const combinedLines = [];
-      for (let i = 0; i < imageParts.length; i++) {
-        throwIfExtractionCancelled();
-        const part = imageParts[i];
-        const basePct = 55 + Math.round((i / imageParts.length) * 28);
-        if (onProgress) {
-          onProgress(basePct, `사진 ${i + 1}/${imageParts.length}장 문자 직접 인식 중...`);
-        }
-
-        let text = '';
-        if (part.inlineData && part.inlineData.data) {
-          const dataUrl = `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
-          const result = await Tesseract.recognize(dataUrl, 'eng+kor', {
-            logger: (info) => {
-              if (isExtractionCancelled) return;
-              if (info && info.status === 'recognizing text' && typeof info.progress === 'number' && onProgress) {
-                const stepPct = basePct + Math.round((info.progress / imageParts.length) * 28);
-                onProgress(Math.min(86, stepPct), `사진 ${i + 1}/${imageParts.length}장 문자 분석 중 (${Math.round(info.progress * 100)}%)`);
-              }
-            }
-          });
-          throwIfExtractionCancelled();
-          text = result?.data?.text || '';
-        } else if (part.inlineData && part.inlineData.rawBytes) {
-          text = extractAsciiStringsFromDngBytes(part.inlineData.rawBytes);
-        }
-
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if (trimmed) combinedLines.push(trimmed);
-        });
-      }
-
-      let detectedTitle = '';
-      const titlePattern = /(unit\s*\d+[^\n]*|day\s*\d+[^\n]*|lesson\s*\d+[^\n]*|chapter\s*\d+[^\n]*|part\s*\d+[^\n]*|제?\s*\d+\s*(?:과|강|단원)[^\n]*)/i;
-      for (const line of combinedLines) {
-        const match = line.match(titlePattern);
-        if (match) {
-          detectedTitle = match[0].trim();
-          break;
-        }
-      }
-
-      const words = [];
-      const seenWords = new Set();
-      const orphanEnglishWords = [];
-      const orphanKoreanMeanings = [];
-
-      for (let idx = 0; idx < combinedLines.length; idx++) {
-        const line = combinedLines[idx];
-        const cleanedLine = line.replace(/^\s*\d{1,3}[.)\s-]+/, '').trim();
-        const pairMatch = cleanedLine.match(/^([A-Za-z][A-Za-z\s'-]{1,35}?)\s+([\[(\uAC00-\uD7A3].+)$/);
-        if (pairMatch) {
-          const engWord = pairMatch[1].trim();
-          const korMeaning = pairMatch[2].trim();
-          const key = engWord.toLowerCase();
-          if (engWord.length >= 2 && korMeaning.length >= 1 && !seenWords.has(key)) {
-            seenWords.add(key);
-            words.push({ word: engWord, meaning: korMeaning });
-          }
-          continue;
-        }
-
-        const onlyEngMatch = cleanedLine.match(/^([A-Za-z][A-Za-z'-]{1,28})$/);
-        const nextLine = combinedLines[idx + 1] ? combinedLines[idx + 1].trim() : '';
-        if (onlyEngMatch && nextLine && /[\uAC00-\uD7A3]/.test(nextLine) && !/^[A-Za-z\s'-]{4,}$/.test(nextLine)) {
-          const engWord = onlyEngMatch[1].trim();
-          const key = engWord.toLowerCase();
-          if (!seenWords.has(key)) {
-            seenWords.add(key);
-            words.push({ word: engWord, meaning: nextLine });
-          }
-          continue;
-        }
-
-        if (/^[A-Za-z][A-Za-z'-]{2,24}$/.test(cleanedLine)) {
-          const k = cleanedLine.toLowerCase();
-          if (!seenWords.has(k) && !orphanEnglishWords.includes(cleanedLine)) {
-            orphanEnglishWords.push(cleanedLine);
-          }
-        } else if (/[\uAC00-\uD7A3]{2,}/.test(cleanedLine) && cleanedLine.length <= 45) {
-          orphanKoreanMeanings.push(cleanedLine);
-        }
-      }
-
-      if (words.length === 0 && orphanEnglishWords.length > 0) {
-        orphanEnglishWords.slice(0, 20).forEach((eng, i) => {
-          const matchedMeaning = orphanKoreanMeanings[i] || '단어 뜻 입력 필요';
-          words.push({ word: eng, meaning: matchedMeaning });
-        });
-      }
-
-      return { detectedTitle, words };
     }
 
     // =========================================================================
@@ -1357,8 +1119,6 @@
         return;
       }
 
-      isExtractionCancelled = false;
-      activeExtractionController = new AbortController();
       resetExtractionProgress();
       els.extractionLoading.classList.remove('hidden');
       els.btnExtractWords.disabled = true;
@@ -1366,160 +1126,24 @@
       setExtractionProgress(8, '업로드한 단어장 사진을 준비하고 있습니다...');
 
       try {
-        throwIfExtractionCancelled();
         const imageParts = [];
         const fileCount = state.selectedFiles.length;
-        const targetDim = 1200;
-        const targetQuality = 0.78;
+        const targetDim = fileCount >= 3 ? 1150 : 1450;
+        const targetQuality = fileCount >= 3 ? 0.76 : 0.84;
 
         for (let i = 0; i < state.selectedFiles.length; i++) {
-          throwIfExtractionCancelled();
           const file = state.selectedFiles[i];
           const prepPct = 8 + Math.round(((i + 0.5) / fileCount) * 27);
-          setExtractionProgress(prepPct, `사진 ${i + 1}/${fileCount}장 압축 및 전처리 중...`);
+          setExtractionProgress(prepPct, `사진 ${i + 1}/${fileCount}장 전처리 및 최적화 중...`);
           const compressed = await fileToCompressedBase64(file, targetDim, targetQuality);
-          throwIfExtractionCancelled();
-        const apiKey = getConfiguredApiKey();
-        if (!apiKey) {
-          showToast('Gemini API 키가 설정되지 않았습니다. 상단 [API 키 설정] 버튼을 눌러 키를 입력해주세요.', 'warning');
-          openApiKeyModal();
-          return;
-        }
-
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-        // Bounded retry backoff with per-request 25s timeout so extraction never hangs indefinitely
-        let responseData = null;
-        let lastApiError = null;
-        const softTicker = setInterval(() => {
-          if (isExtractionCancelled) return;
-          if (targetExtractionPercent < 86) {
-            setExtractionProgress(targetExtractionPercent + 2, 'AI가 단어장 이미지를 분석 중입니다...');
-          }
-        }, 700);
-
-        try {
-          for (let attempt = 0; attempt <= MAX_API_RETRIES; attempt++) {
-            throwIfExtractionCancelled();
-            const attemptController = new AbortController();
-            activeExtractionController = attemptController;
-            const timeoutId = setTimeout(() => {
-              attemptController.abort();
-            }, REQUEST_TIMEOUT_MS);
-
-            try {
-              if (attempt > 0) {
-                setExtractionProgress(
-                  Math.min(78, 45 + attempt * 10),
-                  `응답이 지연되어 재시도 중입니다 (${attempt}/${MAX_API_RETRIES}회, 최대 25초 대기)...`
-                );
-              }
-              const res = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-                signal: attemptController.signal
-              });
-              clearTimeout(timeoutId);
-              throwIfExtractionCancelled();
-
-              if (!res.ok) {
-                let errMsg = `HTTP ${res.status}`;
-                try {
-                  const errBody = await res.json();
-                  if (errBody?.error?.message) errMsg = errBody.error.message;
-                } catch (_) {
-                  // ignore non-JSON error body
-                }
-                if (res.status === 400 || res.status === 401 || res.status === 403) {
-                  throw new Error(`API 키 또는 요청 오류 (${res.status}): ${errMsg}`);
-                }
-                throw new Error(errMsg);
-              }
-
-              responseData = await res.json();
-              break;
-            } catch (err) {
-              clearTimeout(timeoutId);
-              if (isExtractionCancelled) {
-                const cancelErr = new Error('추출이 취소되었습니다.');
-                cancelErr.name = 'AbortError';
-                throw cancelErr;
-              }
-              const isNonRetryableAuthError = /API 키 또는 요청 오류 \((400|401|403)\)/.test(err?.message || '');
-              if (isNonRetryableAuthError) {
-                throw err;
-              }
-              lastApiError = err?.name === 'AbortError'
-                ? new Error('요청 시간(25초)을 초과했습니다.')
-                : err;
-
-              if (attempt < MAX_API_RETRIES) {
-                const backoffMs = 1200 * (attempt + 1);
-                await new Promise((resolve, reject) => {
-                  const timer = setTimeout(() => {
-                    clearInterval(pollCancel);
-                    resolve();
-                  }, backoffMs);
-                  const pollCancel = setInterval(() => {
-                    if (isExtractionCancelled) {
-                      clearTimeout(timer);
-                      clearInterval(pollCancel);
-                      const abortErr = new Error('추출이 취소되었습니다.');
-                      abortErr.name = 'AbortError';
-                      reject(abortErr);
-                    }
-                  }, 100);
-                });
-              }
+          imageParts.push({
+            inlineData: {
+              mimeType: compressed.mimeType,
+              data: compressed.data
             }
-          }
-        } finally {
-          clearInterval(softTicker);
-          activeExtractionController = null;
-        }
-
-        if (!responseData) {
-          throw lastApiError || new Error('사진 추출 요청이 완료되지 않았습니다.');
-        }
-
-        throwIfExtractionCancelled();
-        const hasDngFiles = state.selectedFiles.some(f => /\.dng$/i.test(f.name || ''));
-        const hasValidVisionParts = imageParts.some(p => p.inlineData && p.inlineData.data);
-        if (hasDngFiles && !hasValidVisionParts) {
-          const ocrResult = await extractVocabularyViaLocalOcr(imageParts, setExtractionProgress);
-          throwIfExtractionCancelled();
-          const seenDng = new Set();
-          const dngVocab = (ocrResult.words || [])
-            .map((item, idx) => ({
-              id: `v_dng_${Date.now()}_${idx}`,
-              word: (item.word || '').trim(),
-              meaning: (item.meaning || '').trim()
-            }))
-            .filter(item => {
-              if (!item.word || !item.meaning) return false;
-              const k = item.word.toLowerCase();
-              if (seenDng.has(k)) return false;
-              seenDng.add(k);
-              return true;
-            });
-
-          if (dngVocab.length > 0) {
-            const rawTitle = (ocrResult.detectedTitle || '').trim();
-            const titleKeywordsRegex = /(unit|day|lesson|chapter|part|과|강|단원)/i;
-            state.detectedTitle = rawTitle && titleKeywordsRegex.test(rawTitle) ? rawTitle : '영단어 테스트지';
-            state.vocabulary = dngVocab;
-            els.testTitleInput.value = state.detectedTitle;
-            updateExtractButtonLabel();
-            updateWordCountUI();
-            setExtractionProgress(96, '테스트지를 화면에 배치하고 있습니다...');
-            generateMixedTestSheet(true);
-            hideUploadAccessLogAfterSheetCreated();
-            appendActivityLog(`문제 출제 (총${dngVocab.length}문항)`);
-            completeExtractionProgress();
-            showToast(`DNG 사진에서 총 ${dngVocab.length}개의 영단어를 추출하여 테스트지를 생성했습니다!`, 'success');
-            return;
-          }
+          });
+          const donePrepPct = 8 + Math.round(((i + 1) / fileCount) * 27);
+          setExtractionProgress(donePrepPct, `사진 ${i + 1}/${fileCount}장 준비 완료`);
         }
 
         setExtractionProgress(42, '단원 제목(Unit/Day/Lesson/과 등)과 영단어·품사·뜻 분석 중...');
@@ -1582,59 +1206,39 @@
         const apiKey = "";
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-        // Wait until extraction completes (no retry count limit), cancellable anytime
+        // Exponential backoff fetch with live progress updates
         let responseData = null;
+        const delays = [1000, 2000, 4000, 8000];
         const softTicker = setInterval(() => {
-          if (isExtractionCancelled) return;
-          if (targetExtractionPercent < 88) {
-            setExtractionProgress(targetExtractionPercent + 2, '추출이 완료될 때까지 대기 중입니다...');
+          if (targetExtractionPercent < 82) {
+            setExtractionProgress(targetExtractionPercent + 3, 'AI가 사진 속 영단어와 뜻을 인식하고 있습니다...');
           }
-        }, 550);
+        }, 450);
 
         try {
-          while (!isExtractionCancelled && !responseData) {
-            throwIfExtractionCancelled();
+          for (let attempt = 0; attempt <= delays.length; attempt++) {
             try {
               const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-                signal: activeExtractionController ? activeExtractionController.signal : undefined
+                body: JSON.stringify(payload)
               });
-              throwIfExtractionCancelled();
               if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
               }
               responseData = await res.json();
               break;
             } catch (err) {
-              if (isExtractionCancelled || (err && err.name === 'AbortError')) {
-                throw err;
-              }
-              setExtractionProgress(Math.min(88, targetExtractionPercent + 1), '사진 추출 완료 대기 중... (취소 가능)');
-              await new Promise((resolve, reject) => {
-                const waitId = setTimeout(() => {
-                  clearInterval(cancelPoll);
-                  resolve();
-                }, 1500);
-                const cancelPoll = setInterval(() => {
-                  if (isExtractionCancelled) {
-                    clearTimeout(waitId);
-                    clearInterval(cancelPoll);
-                    const abortErr = new Error('추출이 취소되었습니다.');
-                    abortErr.name = 'AbortError';
-                    reject(abortErr);
-                  }
-                }, 100);
-              });
+              if (attempt === delays.length) throw err;
+              setExtractionProgress(Math.min(84, targetExtractionPercent + 4), `응답 대기 중... 재시도 (${attempt + 1}/${delays.length})`);
+              await new Promise(r => setTimeout(r, delays[attempt]));
             }
           }
         } finally {
           clearInterval(softTicker);
         }
 
-        throwIfExtractionCancelled();
-        setExtractionProgress(90, '추출된 영단어와 테스트 문항을 구성하고 있습니다...');
+        setExtractionProgress(88, '추출된 영단어와 테스트 문항을 구성하고 있습니다...');
 
         const rawJsonText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!rawJsonText) {
@@ -1685,24 +1289,14 @@
         showToast(`총 ${cleanedVocab.length}개의 영단어를 추출하여 테스트지를 생성했습니다!`, 'success');
 
       } catch (error) {
-        if (isExtractionCancelled || (error && error.name === 'AbortError')) {
-          return;
-        }
         console.error('Extraction error:', error);
-        const errMsg = error?.message || '';
         const hasRawDng = state.selectedFiles.some(f => /\.dng$/i.test(f.name));
         if (hasRawDng) {
-          showToast('DNG 사진의 텍스트를 추출하지 못했습니다. 일반 사진(JPG/PNG/HEIC)으로 다시 시도하거나 직접 입력해주세요.', 'error');
-        } else if (/401|403|API 키/i.test(errMsg)) {
-          showToast('API 키가 올바르지 않거나 권한이 없습니다. 상단 [API 키 설정]을 확인해주세요.', 'error');
-        } else if (/25초|시간.*초과|timeout/i.test(errMsg)) {
-          showToast('AI 응답 시간이 초과(25초)되었습니다. 사진 수를 줄이거나 잠시 후 다시 시도해주세요.', 'warning');
+          showToast('RAW(.dng) 사진은 용량이 크거나 브라우저에서 제한될 수 있습니다. 일반 사진(JPG/HEIC)으로 다시 시도해 주세요.', 'error');
         } else {
-          showToast(`이미지 분석 중 오류가 발생했습니다: ${errMsg || '네트워크 상태를 확인해주세요.'}`, 'error');
+          showToast('이미지 분석 중 오류가 발생했습니다. 네트워크 상태를 확인하거나 샘플 데이터로 테스트해보세요.', 'error');
         }
       } finally {
-        activeExtractionController = null;
-        isExtractionCancelled = false;
         resetExtractionProgress();
         els.extractionLoading.classList.add('hidden');
         els.btnExtractWords.disabled = false;
@@ -2801,7 +2395,6 @@
     }
 
     if (pwInput && pwModal) {
-      updateApiKeyBadgeUI();
       renderActivityLogs();
       focusPwInput();
 
