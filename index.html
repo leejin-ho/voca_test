@@ -1115,57 +1115,102 @@
     });
 
     // Helper: Resize & compress image to base64 JPEG (with safe fallback for iOS HEIC/DNG)
+    function arrayBufferToBase64Fast(bytes) {
+      if (!bytes || !(bytes instanceof Uint8Array) || bytes.length === 0) return '';
+      const chunkSize = 0x8000;
+      const parts = [];
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const sub = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+        parts.push(String.fromCharCode.apply(null, sub));
+      }
+      return btoa(parts.join(''));
+    }
+
+    function extractEmbeddedJpegFromDngBytes(bytes) {
+      if (!bytes || !(bytes instanceof Uint8Array) || bytes.length < 16) return null;
+
+      // Collect JPEG SOI markers (0xFF 0xD8 0xFF)
+      const soiPositions = [];
+      for (let i = 0; i < bytes.length - 4; i++) {
+        if (bytes[i] === 0xFF && bytes[i + 1] === 0xD8 && bytes[i + 2] === 0xFF) {
+          soiPositions.push(i);
+          if (soiPositions.length >= 24) break;
+        }
+      }
+      if (soiPositions.length === 0) return null;
+
+      // Search backward for EOI (0xFF 0xD9) from the end of each candidate JPEG segment
+      let bestSlice = null;
+      for (const startIdx of soiPositions) {
+        const searchLimit = Math.min(bytes.length - 1, startIdx + 12 * 1024 * 1024);
+        let foundEnd = -1;
+        for (let j = searchLimit - 1; j > startIdx + 1024; j--) {
+          if (bytes[j - 1] === 0xFF && bytes[j] === 0xD9) {
+            foundEnd = j + 1;
+            break;
+          }
+        }
+        if (foundEnd > startIdx + 2048) {
+          const sliceLen = foundEnd - startIdx;
+          if (!bestSlice || sliceLen > bestSlice.length) {
+            bestSlice = bytes.subarray(startIdx, foundEnd);
+          }
+        }
+      }
+      return bestSlice;
+    }
+
     function fileToCompressedBase64(file, maxDim = 1400, quality = 0.82) {
       return new Promise((resolve, reject) => {
         throwIfExtractionCancelled();
         const isDng = /\.dng$/i.test(file.name || '');
         const reader = new FileReader();
+
+        const settleTimeout = setTimeout(() => {
+          resolve({
+            mimeType: 'image/jpeg',
+            data: '',
+            isDng,
+            fallbackName: file.name || 'image'
+          });
+        }, 6000);
+
+        const done = (payload) => {
+          clearTimeout(settleTimeout);
+          resolve(payload);
+        };
+
         reader.onload = () => {
           if (isExtractionCancelled) {
+            clearTimeout(settleTimeout);
             const err = new Error('추출이 취소되었습니다.');
             err.name = 'AbortError';
             reject(err);
             return;
           }
-          const rawDataUrl = reader.result;
-          const rawBase64 = typeof rawDataUrl === 'string' && rawDataUrl.includes(',')
-            ? rawDataUrl.split(',')[1]
-            : '';
-          const fallbackMime = isDng
-            ? 'image/jpeg'
-            : (file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg');
 
           if (isDng && reader.result instanceof ArrayBuffer) {
             try {
               const bytes = new Uint8Array(reader.result);
-              // Search for embedded JPEG SOI (0xFF 0xD8) and EOI (0xFF 0xD9) inside DNG container
-              let bestStart = -1;
-              let bestEnd = -1;
-              for (let i = 0; i < bytes.length - 4; i++) {
-                if (bytes[i] === 0xFF && bytes[i + 1] === 0xD8 && bytes[i + 2] === 0xFF) {
-                  let endIdx = -1;
-                  for (let j = i + 4; j < bytes.length - 1; j++) {
-                    if (bytes[j] === 0xFF && bytes[j + 1] === 0xD9) {
-                      endIdx = j + 2;
-                    }
-                  }
-                  if (endIdx > i + 4096) {
-                    const size = endIdx - i;
-                    if (bestEnd === -1 || size > (bestEnd - bestStart)) {
-                      bestStart = i;
-                      bestEnd = endIdx;
-                    }
-                    break;
-                  }
-                }
-              }
+              const embeddedJpeg = extractEmbeddedJpegFromDngBytes(bytes);
 
-              if (bestStart !== -1 && bestEnd !== -1) {
-                const jpegSlice = bytes.slice(bestStart, bestEnd);
-                const jpegBlob = new Blob([jpegSlice], { type: 'image/jpeg' });
+              if (embeddedJpeg && embeddedJpeg.length > 0) {
+                const jpegBlob = new Blob([embeddedJpeg], { type: 'image/jpeg' });
                 const previewImg = new Image();
                 const blobUrl = URL.createObjectURL(jpegBlob);
+
+                const imgTimer = setTimeout(() => {
+                  URL.revokeObjectURL(blobUrl);
+                  done({
+                    mimeType: 'image/jpeg',
+                    data: arrayBufferToBase64Fast(embeddedJpeg.slice(0, 512 * 1024)),
+                    isDng: true,
+                    rawBytes: bytes
+                  });
+                }, 2500);
+
                 previewImg.onload = () => {
+                  clearTimeout(imgTimer);
                   try {
                     let { width, height } = previewImg;
                     if (width > maxDim || height > maxDim) {
@@ -1178,44 +1223,56 @@
                       }
                     }
                     const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = width || 800;
+                    canvas.height = height || 600;
                     const ctx = canvas.getContext('2d');
-                    ctx.drawImage(previewImg, 0, 0, width, height);
-                    const outBase64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+                    ctx.drawImage(previewImg, 0, 0, canvas.width, canvas.height);
+                    const outBase64 = canvas.toDataURL('image/jpeg', quality).split(',')[1] || '';
                     URL.revokeObjectURL(blobUrl);
-                    resolve({ mimeType: 'image/jpeg', data: outBase64, isDng: true });
+                    done({ mimeType: 'image/jpeg', data: outBase64, isDng: true, rawBytes: bytes });
                   } catch (canvasErr) {
                     URL.revokeObjectURL(blobUrl);
-                    resolve({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
+                    done({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
                   }
                 };
                 previewImg.onerror = () => {
+                  clearTimeout(imgTimer);
                   URL.revokeObjectURL(blobUrl);
-                  resolve({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
+                  done({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
                 };
                 previewImg.src = blobUrl;
                 return;
               }
 
-              resolve({ mimeType: fallbackMime, data: '', isDng: true, rawBytes: bytes });
+              done({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
               return;
             } catch (dngErr) {
-              console.warn('DNG embedded JPEG scan error:', dngErr);
+              console.warn('DNG processing error:', dngErr);
+              done({ mimeType: 'image/jpeg', data: '', isDng: true });
+              return;
             }
           }
 
+          const rawDataUrl = typeof reader.result === 'string' ? reader.result : '';
+          const rawBase64 = rawDataUrl.includes(',') ? rawDataUrl.split(',')[1] : '';
+          const fallbackMime = (file.type && file.type.startsWith('image/')) ? file.type : 'image/jpeg';
+
           if (!rawBase64) {
-            reject(new Error('파일 읽기에 실패했습니다.'));
+            done({ mimeType: fallbackMime, data: '', isDng: false });
             return;
           }
 
           const img = new Image();
+          const imgFallbackTimer = setTimeout(() => {
+            done({ mimeType: fallbackMime, data: rawBase64 });
+          }, 3500);
+
           img.onload = () => {
+            clearTimeout(imgFallbackTimer);
             try {
               let { width, height } = img;
               if (!width || !height) {
-                resolve({ mimeType: fallbackMime, data: rawBase64 });
+                done({ mimeType: fallbackMime, data: rawBase64 });
                 return;
               }
               if (width > maxDim || height > maxDim) {
@@ -1233,22 +1290,24 @@
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
               const dataUrl = canvas.toDataURL('image/jpeg', quality);
-              const base64 = dataUrl.split(',')[1];
-              resolve({ mimeType: 'image/jpeg', data: base64 });
+              const base64 = dataUrl.split(',')[1] || rawBase64;
+              done({ mimeType: 'image/jpeg', data: base64 });
             } catch (e) {
-              resolve({ mimeType: fallbackMime, data: rawBase64 });
+              done({ mimeType: fallbackMime, data: rawBase64 });
             }
           };
           img.onerror = () => {
-            if (rawBase64) {
-              resolve({ mimeType: fallbackMime, data: rawBase64 });
-            } else {
-              reject(new Error('이미지 파일을 읽을 수 없습니다.'));
-            }
+            clearTimeout(imgFallbackTimer);
+            done({ mimeType: fallbackMime, data: rawBase64 });
           };
           img.src = rawDataUrl;
         };
-        reader.onerror = () => reject(new Error('파일 읽기에 실패했습니다.'));
+
+        reader.onerror = () => {
+          clearTimeout(settleTimeout);
+          done({ mimeType: 'image/jpeg', data: '', isDng });
+        };
+
         if (isDng && typeof file.arrayBuffer === 'function') {
           reader.readAsArrayBuffer(file);
         } else {
@@ -1265,17 +1324,40 @@
           return;
         }
         const existing = document.querySelector('script[data-ocr-lib="tesseract"]');
+        const timeoutId = setTimeout(() => {
+          reject(new Error('OCR 엔진 로딩 시간 초과'));
+        }, 12000);
+
+        const onReady = () => {
+          clearTimeout(timeoutId);
+          if (window.Tesseract && typeof window.Tesseract.recognize === 'function') {
+            resolve(window.Tesseract);
+          } else {
+            reject(new Error('OCR 엔진 초기화 실패'));
+          }
+        };
+
         if (existing) {
-          existing.addEventListener('load', () => resolve(window.Tesseract));
-          existing.addEventListener('error', () => reject(new Error('OCR 라이브러리 로드 실패')));
+          if (window.Tesseract) {
+            onReady();
+          } else {
+            existing.addEventListener('load', onReady, { once: true });
+            existing.addEventListener('error', () => {
+              clearTimeout(timeoutId);
+              reject(new Error('OCR 라이브러리 로드 실패'));
+            }, { once: true });
+          }
           return;
         }
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
         script.async = true;
         script.setAttribute('data-ocr-lib', 'tesseract');
-        script.onload = () => resolve(window.Tesseract);
-        script.onerror = () => reject(new Error('OCR 라이브러리 로드 실패'));
+        script.onload = onReady;
+        script.onerror = () => {
+          clearTimeout(timeoutId);
+          reject(new Error('OCR 라이브러리 로드 실패'));
+        };
         document.head.appendChild(script);
       });
     }
@@ -1284,12 +1366,13 @@
       if (!rawBytes || !(rawBytes instanceof Uint8Array)) return '';
       const chunks = [];
       let current = '';
-      const step = rawBytes.length > 4000000 ? 2 : 1;
-      for (let i = 0; i < rawBytes.length; i += step) {
+      const maxScan = Math.min(rawBytes.length, 6 * 1024 * 1024);
+      const step = maxScan > 3000000 ? 3 : 1;
+      for (let i = 0; i < maxScan; i += step) {
         const b = rawBytes[i];
         if ((b >= 65 && b <= 90) || (b >= 97 && b <= 122) || (b >= 48 && b <= 57) || b === 32 || b === 45 || b === 39) {
           current += String.fromCharCode(b);
-          if (current.length > 120) {
+          if (current.length > 100) {
             chunks.push(current);
             current = '';
           }
@@ -1306,33 +1389,48 @@
 
     async function extractVocabularyViaLocalOcr(imageParts, onProgress) {
       throwIfExtractionCancelled();
-      if (onProgress) onProgress(52, '브라우저 내장 OCR 엔진을 준비하고 있습니다...');
-      const Tesseract = await loadTesseractScript();
-      throwIfExtractionCancelled();
+      if (onProgress) onProgress(55, '브라우저 내장 OCR 엔진을 준비하고 있습니다...');
 
+      let Tesseract = null;
+      try {
+        Tesseract = await loadTesseractScript();
+      } catch (libErr) {
+        console.warn('Tesseract load fallback:', libErr);
+      }
+
+      throwIfExtractionCancelled();
       const combinedLines = [];
+
       for (let i = 0; i < imageParts.length; i++) {
         throwIfExtractionCancelled();
         const part = imageParts[i];
-        const basePct = 55 + Math.round((i / imageParts.length) * 28);
+        const basePct = 58 + Math.round((i / imageParts.length) * 28);
         if (onProgress) {
           onProgress(basePct, `사진 ${i + 1}/${imageParts.length}장 문자 직접 인식 중...`);
         }
 
         let text = '';
-        if (part.inlineData && part.inlineData.data) {
-          const dataUrl = `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
-          const result = await Tesseract.recognize(dataUrl, 'eng+kor', {
-            logger: (info) => {
-              if (isExtractionCancelled) return;
-              if (info && info.status === 'recognizing text' && typeof info.progress === 'number' && onProgress) {
-                const stepPct = basePct + Math.round((info.progress / imageParts.length) * 28);
-                onProgress(Math.min(86, stepPct), `사진 ${i + 1}/${imageParts.length}장 문자 분석 중 (${Math.round(info.progress * 100)}%)`);
+        if (part.inlineData && part.inlineData.data && Tesseract) {
+          try {
+            const dataUrl = `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
+            const recognizePromise = Tesseract.recognize(dataUrl, 'eng+kor', {
+              logger: (info) => {
+                if (isExtractionCancelled) return;
+                if (info && info.status === 'recognizing text' && typeof info.progress === 'number' && onProgress) {
+                  const stepPct = basePct + Math.round((info.progress / imageParts.length) * 26);
+                  onProgress(Math.min(87, stepPct), `사진 ${i + 1}/${imageParts.length}장 문자 분석 중 (${Math.round(info.progress * 100)}%)`);
+                }
               }
-            }
-          });
-          throwIfExtractionCancelled();
-          text = result?.data?.text || '';
+            });
+            const perImageTimeout = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('OCR per-image timeout')), 12000);
+            });
+            const result = await Promise.race([recognizePromise, perImageTimeout]);
+            throwIfExtractionCancelled();
+            text = result?.data?.text || '';
+          } catch (ocrErr) {
+            console.warn(`OCR failed on image ${i + 1}:`, ocrErr);
+          }
         } else if (part.inlineData && part.inlineData.rawBytes) {
           text = extractAsciiStringsFromDngBytes(part.inlineData.rawBytes);
         }
@@ -1405,6 +1503,48 @@
       return { detectedTitle, words };
     }
 
+    function finalizeExtractedVocabulary(rawWords, rawTitle, sourceLabel = '') {
+      const seen = new Set();
+      const cleanedVocab = [];
+      (rawWords || []).forEach((item, idx) => {
+        const w = (item.word || '').trim();
+        const m = (item.meaning || '').trim();
+        if (w && m && !seen.has(w.toLowerCase())) {
+          seen.add(w.toLowerCase());
+          cleanedVocab.push({
+            id: `v_${Date.now()}_${idx}`,
+            word: w,
+            meaning: m
+          });
+        }
+      });
+
+      if (cleanedVocab.length === 0) {
+        return false;
+      }
+
+      const trimmedTitle = (rawTitle || '').trim();
+      const titleKeywordsRegex = /(unit|day|lesson|chapter|part|과|강|단원)/i;
+      if (trimmedTitle && titleKeywordsRegex.test(trimmedTitle)) {
+        state.detectedTitle = trimmedTitle;
+      } else {
+        state.detectedTitle = '영단어 테스트지';
+      }
+
+      state.vocabulary = cleanedVocab;
+      els.testTitleInput.value = state.detectedTitle;
+      updateExtractButtonLabel();
+      updateWordCountUI();
+      setExtractionProgress(96, '테스트지를 화면에 배치하고 있습니다...');
+      generateMixedTestSheet(true);
+      hideUploadAccessLogAfterSheetCreated();
+      appendActivityLog(`문제 출제 (총${cleanedVocab.length}문항)`);
+      completeExtractionProgress();
+      const prefix = sourceLabel ? `${sourceLabel} ` : '';
+      showToast(`${prefix}총 ${cleanedVocab.length}개의 영단어를 추출하여 테스트지를 생성했습니다!`, 'success');
+      return true;
+    }
+
     // =========================================================================
     // 2. GEMINI VISION EXTRACTION (Title Keywords + Exact Part-of-Speech & Meaning)
     // =========================================================================
@@ -1426,13 +1566,13 @@
         throwIfExtractionCancelled();
         const imageParts = [];
         const fileCount = state.selectedFiles.length;
-        const targetDim = fileCount >= 3 ? 1150 : 1450;
-        const targetQuality = fileCount >= 3 ? 0.76 : 0.84;
+        const targetDim = fileCount >= 3 ? 1100 : 1400;
+        const targetQuality = fileCount >= 3 ? 0.75 : 0.82;
 
         for (let i = 0; i < state.selectedFiles.length; i++) {
           throwIfExtractionCancelled();
           const file = state.selectedFiles[i];
-          const prepPct = 8 + Math.round(((i + 0.5) / fileCount) * 27);
+          const prepPct = 8 + Math.round(((i + 0.5) / fileCount) * 26);
           setExtractionProgress(prepPct, `사진 ${i + 1}/${fileCount}장 전처리 및 최적화 중...`);
           const compressed = await fileToCompressedBase64(file, targetDim, targetQuality);
           throwIfExtractionCancelled();
@@ -1453,52 +1593,18 @@
               }
             });
           }
-          const donePrepPct = 8 + Math.round(((i + 1) / fileCount) * 27);
+          const donePrepPct = 8 + Math.round(((i + 1) / fileCount) * 26);
           setExtractionProgress(donePrepPct, `사진 ${i + 1}/${fileCount}장 준비 완료`);
         }
 
         throwIfExtractionCancelled();
-        const hasDngFiles = state.selectedFiles.some(f => /\.dng$/i.test(f.name || ''));
-        const hasValidVisionParts = imageParts.some(p => p.inlineData && p.inlineData.data);
-        if (hasDngFiles && !hasValidVisionParts) {
-          const ocrResult = await extractVocabularyViaLocalOcr(imageParts, setExtractionProgress);
-          throwIfExtractionCancelled();
-          const seenDng = new Set();
-          const dngVocab = (ocrResult.words || [])
-            .map((item, idx) => ({
-              id: `v_dng_${Date.now()}_${idx}`,
-              word: (item.word || '').trim(),
-              meaning: (item.meaning || '').trim()
-            }))
-            .filter(item => {
-              if (!item.word || !item.meaning) return false;
-              const k = item.word.toLowerCase();
-              if (seenDng.has(k)) return false;
-              seenDng.add(k);
-              return true;
-            });
+        const visionParts = imageParts.filter(p => p.inlineData && p.inlineData.data);
+        let parsed = null;
 
-          if (dngVocab.length > 0) {
-            const rawTitle = (ocrResult.detectedTitle || '').trim();
-            const titleKeywordsRegex = /(unit|day|lesson|chapter|part|과|강|단원)/i;
-            state.detectedTitle = rawTitle && titleKeywordsRegex.test(rawTitle) ? rawTitle : '영단어 테스트지';
-            state.vocabulary = dngVocab;
-            els.testTitleInput.value = state.detectedTitle;
-            updateExtractButtonLabel();
-            updateWordCountUI();
-            setExtractionProgress(96, '테스트지를 화면에 배치하고 있습니다...');
-            generateMixedTestSheet(true);
-            hideUploadAccessLogAfterSheetCreated();
-            appendActivityLog(`문제 출제 (총${dngVocab.length}문항)`);
-            completeExtractionProgress();
-            showToast(`DNG 사진에서 총 ${dngVocab.length}개의 영단어를 추출하여 테스트지를 생성했습니다!`, 'success');
-            return;
-          }
-        }
+        if (visionParts.length > 0) {
+          setExtractionProgress(42, '단원 제목(Unit/Day/Lesson/과 등)과 영단어·품사·뜻 분석 중...');
 
-        setExtractionProgress(42, '단원 제목(Unit/Day/Lesson/과 등)과 영단어·품사·뜻 분석 중...');
-
-        const promptText = `
+          const promptText = `
 당신은 한국 학생들을 위한 영단어장 OCR 및 데이터 추출 전문가입니다.
 첨부된 단어장 페이지 사진(들)을 분석하여 다음 JSON 구조로 정확하게 추출해주세요.
 
@@ -1517,158 +1623,118 @@
    - 중복된 영단어가 있다면 하나로 합치세요.
 `;
 
-        const payload = {
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: promptText },
-                ...imageParts
-              ]
-            }
-          ],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: 'OBJECT',
-              properties: {
-                detectedTitle: {
-                  type: 'STRING',
-                  description: 'Unit, Day, Lesson, Chapter, Part, 과, 강, 단원 등이 포함된 추출 제목'
+          const payload = {
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  { text: promptText },
+                  ...visionParts
+                ]
+              }
+            ],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: 'OBJECT',
+                properties: {
+                  detectedTitle: {
+                    type: 'STRING',
+                    description: 'Unit, Day, Lesson, Chapter, Part, 과, 강, 단원 등이 포함된 추출 제목'
+                  },
+                  words: {
+                    type: 'ARRAY',
+                    items: {
+                      type: 'OBJECT',
+                      properties: {
+                        word: { type: 'STRING', description: '영어 단어 또는 숙어' },
+                        meaning: { type: 'STRING', description: '사진에 표기된 품사(형용사, 동사, 명사 등)와 한국어 뜻 원문 그대로' }
+                      },
+                      required: ['word', 'meaning']
+                    }
+                  }
                 },
-                words: {
-                  type: 'ARRAY',
-                  items: {
-                    type: 'OBJECT',
-                    properties: {
-                      word: { type: 'STRING', description: '영어 단어 또는 숙어' },
-                      meaning: { type: 'STRING', description: '사진에 표기된 품사(형용사, 동사, 명사 등)와 한국어 뜻 원문 그대로' }
-                    },
-                    required: ['word', 'meaning']
-                  }
-                }
-              },
-              required: ['detectedTitle', 'words']
+                required: ['detectedTitle', 'words']
+              }
             }
+          };
+
+          const apiKey = "";
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+          const requestController = new AbortController();
+          const onCancelAbort = () => requestController.abort();
+          if (activeExtractionController) {
+            activeExtractionController.signal.addEventListener('abort', onCancelAbort, { once: true });
           }
-        };
 
-        const apiKey = "";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+          const requestTimeout = setTimeout(() => {
+            requestController.abort();
+          }, 25000);
 
-        // Wait until extraction completes (no retry count limit), cancellable anytime
-        let responseData = null;
-        const softTicker = setInterval(() => {
-          if (isExtractionCancelled) return;
-          if (targetExtractionPercent < 88) {
-            setExtractionProgress(targetExtractionPercent + 2, '추출이 완료될 때까지 대기 중입니다...');
-          }
-        }, 550);
+          const progressStepInterval = setInterval(() => {
+            if (isExtractionCancelled) return;
+            if (targetExtractionPercent < 86) {
+              setExtractionProgress(targetExtractionPercent + 3, '단어장 텍스트 및 뜻을 분석하고 있습니다...');
+            }
+          }, 1200);
 
-        try {
-          while (!isExtractionCancelled && !responseData) {
+          try {
+            const res = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+              signal: requestController.signal
+            });
             throwIfExtractionCancelled();
-            try {
-              const res = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-                signal: activeExtractionController ? activeExtractionController.signal : undefined
-              });
-              throwIfExtractionCancelled();
-              if (!res.ok) {
-                throw new Error(`HTTP ${res.status}`);
+            if (res.ok) {
+              const responseData = await res.json();
+              const rawJsonText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (rawJsonText) {
+                parsed = JSON.parse(rawJsonText);
               }
-              responseData = await res.json();
-              break;
-            } catch (err) {
-              if (isExtractionCancelled || (err && err.name === 'AbortError')) {
-                throw err;
-              }
-              setExtractionProgress(Math.min(88, targetExtractionPercent + 1), '사진 추출 완료 대기 중... (취소 가능)');
-              await new Promise((resolve, reject) => {
-                const waitId = setTimeout(() => {
-                  clearInterval(cancelPoll);
-                  resolve();
-                }, 1500);
-                const cancelPoll = setInterval(() => {
-                  if (isExtractionCancelled) {
-                    clearTimeout(waitId);
-                    clearInterval(cancelPoll);
-                    const abortErr = new Error('추출이 취소되었습니다.');
-                    abortErr.name = 'AbortError';
-                    reject(abortErr);
-                  }
-                }, 100);
-              });
+            } else {
+              console.warn('Vision API non-OK response:', res.status);
+            }
+          } catch (apiErr) {
+            if (isExtractionCancelled || (activeExtractionController && activeExtractionController.signal.aborted)) {
+              throw apiErr;
+            }
+            console.warn('Vision API request fallback:', apiErr);
+          } finally {
+            clearTimeout(requestTimeout);
+            clearInterval(progressStepInterval);
+            if (activeExtractionController) {
+              activeExtractionController.signal.removeEventListener('abort', onCancelAbort);
             }
           }
-        } finally {
-          clearInterval(softTicker);
         }
 
         throwIfExtractionCancelled();
-        setExtractionProgress(90, '추출된 영단어와 테스트 문항을 구성하고 있습니다...');
 
-        const rawJsonText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!rawJsonText) {
-          throw new Error('응답 데이터가 비어 있습니다.');
+        if (parsed && Array.isArray(parsed.words) && parsed.words.length > 0) {
+          setExtractionProgress(90, '추출된 영단어와 테스트 문항을 구성하고 있습니다...');
+          const done = finalizeExtractedVocabulary(parsed.words, parsed.detectedTitle);
+          if (done) return;
         }
 
-        const parsed = JSON.parse(rawJsonText);
-        const extractedList = Array.isArray(parsed.words) ? parsed.words : [];
+        // Smooth local OCR fallback when API fails, times out, or DNG has no JPEG preview
+        setExtractionProgress(55, '직접 문자 인식(OCR)으로 전환하여 분석 중입니다...');
+        const ocrResult = await extractVocabularyViaLocalOcr(imageParts, setExtractionProgress);
+        throwIfExtractionCancelled();
+        setExtractionProgress(90, '인식된 단어와 테스트 문항을 구성하고 있습니다...');
+        const doneOcr = finalizeExtractedVocabulary(ocrResult?.words || [], ocrResult?.detectedTitle || '', '직접 인식으로');
+        if (doneOcr) return;
 
-        // Clean & deduplicate
-        const seen = new Set();
-        const cleanedVocab = [];
-        extractedList.forEach((item, idx) => {
-          const w = (item.word || '').trim();
-          const m = (item.meaning || '').trim();
-          if (w && m && !seen.has(w.toLowerCase())) {
-            seen.add(w.toLowerCase());
-            cleanedVocab.push({
-              id: `v_${Date.now()}_${idx}`,
-              word: w,
-              meaning: m
-            });
-          }
-        });
-
-        if (cleanedVocab.length === 0) {
-          showToast('사진에서 영단어를 찾지 못했습니다. 선명한 사진으로 다시 시도하거나 직접 입력해주세요.', 'warning');
-          return;
-        }
-
-        const rawTitle = (parsed.detectedTitle || '').trim();
-        const titleKeywordsRegex = /(unit|day|lesson|chapter|part|과|강|단원)/i;
-        if (rawTitle && titleKeywordsRegex.test(rawTitle)) {
-          state.detectedTitle = rawTitle;
-        } else {
-          state.detectedTitle = '영단어 테스트지';
-        }
-
-        state.vocabulary = cleanedVocab;
-        els.testTitleInput.value = state.detectedTitle;
-        updateExtractButtonLabel();
-        updateWordCountUI();
-        setExtractionProgress(96, '테스트지를 화면에 배치하고 있습니다...');
-        generateMixedTestSheet(true);
-        hideUploadAccessLogAfterSheetCreated();
-        appendActivityLog(`문제 출제 (총${cleanedVocab.length}문항)`);
         completeExtractionProgress();
-        showToast(`총 ${cleanedVocab.length}개의 영단어를 추출하여 테스트지를 생성했습니다!`, 'success');
+        showToast('사진에서 영단어를 찾지 못했습니다. 선명한 사진(JPG/PNG)으로 다시 시도하거나 직접 입력해주세요.', 'warning');
 
       } catch (error) {
         if (isExtractionCancelled || (error && error.name === 'AbortError')) {
           return;
         }
         console.error('Extraction error:', error);
-        const hasRawDng = state.selectedFiles.some(f => /\.dng$/i.test(f.name));
-        if (hasRawDng) {
-          showToast('DNG 사진의 텍스트를 추출하지 못했습니다. 일반 사진(JPG/PNG/HEIC)으로 다시 시도하거나 직접 입력해주세요.', 'error');
-        } else {
-          showToast('이미지 분석 중 오류가 발생했습니다. 네트워크 상태를 확인하거나 샘플 데이터로 테스트해보세요.', 'error');
-        }
+        showToast('이미지 분석 중 문제가 발생했습니다. JPG/PNG 사진으로 다시 시도하거나 샘플 단어장을 이용해 주세요.', 'error');
       } finally {
         activeExtractionController = null;
         isExtractionCancelled = false;
@@ -2219,7 +2285,6 @@
         : ['기록된 활동 일시가 없습니다.'];
       const activityLogText = activityLogLines.map(line => `- ${line}`).join('\n');
 
-      // Build share message without detailed grading lines and with newline-separated activity logs
       const buildShareMessage = (headerLines) => [
         ...headerLines,
         ``,
