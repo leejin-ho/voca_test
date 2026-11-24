@@ -13,6 +13,7 @@
   <!-- html2canvas & jsPDF for high-quality JPEG, PNG, PDF Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     body {
       font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -55,7 +56,6 @@
     .export-capture-mode .no-export {
       display: none !important;
     }
-
     /* Fix html2canvas baseline vertical shift on badges & inputs during capture */
     .export-capture-mode .export-badge-fix {
       display: inline-table !important;
@@ -104,10 +104,12 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
         </svg>
       </div>
+
       <div class="space-y-1">
         <h2 class="text-lg font-extrabold text-slate-900">접속 비밀번호 입력</h2>
         <p class="text-xs text-slate-500">숫자 4자리를 입력하면 자동으로 확인됩니다.</p>
       </div>
+
       <div>
         <input
           id="gate-pw-input"
@@ -206,20 +208,6 @@
           <p id="loading-sub" class="text-xs text-indigo-700 mt-0.5">단원 제목(Unit/Day/Lesson/과 등)과 표제어·품사·뜻을 추출 중입니다.</p>
         </div>
       </div>
-
-      <!-- Persistent Access Timestamp Log (Shown after 4-digit password authentication) -->
-      <div id="upload-access-log-section" class="hidden mt-5 pt-4 border-t border-slate-100">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            통합 접속 및 활동 일시 기록
-          </h3>
-          <span class="text-[11px] text-slate-400 font-medium">접속·출제·채점 기록 영구 누적</span>
-        </div>
-        <div id="upload-access-log-container" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 space-y-1 max-h-36 overflow-y-auto">
-          <p class="text-slate-400 italic">기록을 불러오는 중입니다.</p>
-        </div>
-      </div>
     </section>
 
     <!-- Action & Export Toolbar (Visible once test is generated) -->
@@ -257,12 +245,10 @@
             <option value="jpeg">JPEG 이미지 (.jpg)</option>
             <option value="summary">요약 리포트 (.txt)</option>
           </select>
-
           <button id="btn-export" type="button" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             <span id="btn-export-text">결과지 내보내기</span>
           </button>
-
           <button id="btn-share-export" type="button" class="px-3 py-1.5 rounded-lg bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold text-xs sm:text-sm shadow-2xs transition flex items-center gap-1.5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
             <span>공유</span>
@@ -271,9 +257,9 @@
       </div>
     </section>
 
-    <!-- =================================================================== -->
-    <!-- TEST SHEET PAPER CONTAINER (Captured cleanly for JPEG / PNG / PDF)   -->
-    <!-- =================================================================== -->
+    <!-- ===================================================================== -->
+    <!-- TEST SHEET PAPER CONTAINER (Captured cleanly for JPEG / PNG / PDF)    -->
+    <!-- ===================================================================== -->
     <article id="test-sheet-container" class="hidden bg-white rounded-2xl border border-slate-200 shadow-md p-6 sm:p-10 space-y-6">
 
       <!-- Test Sheet Header -->
@@ -282,7 +268,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 mb-1.5">
               <span class="export-badge-fix px-2.5 py-1 rounded bg-slate-900 text-white text-[11px] font-extrabold tracking-wider uppercase whitespace-nowrap shrink-0">VOCABULARY TEST</span>
-              <span id="sheet-mode-summary" class="text-[11px] sm:text-xs font-bold text-pink-600 whitespace-nowrap">총 0문항 (단어쓰기 0 / 뜻쓰기 0)</span>
+              <span id="sheet-mode-summary" class="text-[11px] sm:text-xs font-semibold text-slate-500 whitespace-nowrap">총 0문항 (단어쓰기 0 / 뜻쓰기 0)</span>
             </div>
             <!-- Editable Detected Title -->
             <div class="flex items-center gap-2 group">
@@ -413,7 +399,7 @@
             <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             테스트지 사용 및 열람 일시 기록
           </h4>
-          <span class="text-[11px] text-slate-400 font-medium">웹 접속·문제 출제·정답지 열람·초기화·채점 이력 통합 누적</span>
+          <span class="text-[11px] text-slate-400 font-medium">정답지 열람 · 초기화 · 채점 이력 자동 기록</span>
         </div>
         <div id="activity-log-container" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 space-y-1 max-h-44 overflow-y-auto">
           <p class="text-slate-400 italic">아직 기록된 활동이 없습니다.</p>
@@ -421,12 +407,11 @@
       </footer>
 
     </article>
-
   </main>
 
-  <!-- =================================================================== -->
-  <!-- MODAL 1: ANSWER KEY VIEWER MODAL                                    -->
-  <!-- =================================================================== -->
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: ANSWER KEY VIEWER MODAL                                      -->
+  <!-- ===================================================================== -->
   <div id="answer-key-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-amber-50/70">
@@ -449,9 +434,9 @@
     </div>
   </div>
 
-  <!-- =================================================================== -->
-  <!-- MODAL 2: EXTRACTED QUESTION & WORD EDITOR MODAL                     -->
-  <!-- =================================================================== -->
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: EXTRACTED QUESTION & WORD EDITOR MODAL                       -->
+  <!-- ===================================================================== -->
   <div id="word-editor-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
@@ -489,15 +474,15 @@
     </div>
   </div>
 
-  <!-- =================================================================== -->
-  <!-- MODAL 3: SAVE LOCATION & FILENAME PICKER POPUP MODAL                -->
-  <!-- =================================================================== -->
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: SAVE LOCATION & FILENAME PICKER POPUP MODAL                  -->
+  <!-- ===================================================================== -->
   <div id="save-location-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-indigo-50/60">
         <div class="flex items-center gap-2">
           <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-          <h3 class="text-base font-extrabold text-slate-900">채점 결과지 저장·요약·공유</h3>
+          <h3 class="text-base font-extrabold text-slate-900">채점 결과지 저장 · 요약 · 공유</h3>
         </div>
         <button id="btn-close-save-modal" type="button" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200/70 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -559,34 +544,6 @@
     </div>
   </div>
 
-  <!-- Gemini API Key Setup Modal (Shown only when running externally without injected API key) -->
-  <div id="api-key-modal" class="fixed inset-0 z-50 hidden bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4 no-print">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-indigo-50/70">
-        <div class="flex items-center gap-2">
-          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-          <h3 class="text-base font-extrabold text-slate-900">Gemini API 키 설정</h3>
-        </div>
-        <button id="btn-close-api-key-modal" type="button" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200/70 transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <div class="p-6 space-y-4">
-        <p class="text-xs text-slate-600 leading-relaxed">
-          외부 웹 주소(GitHub Pages 등)에서 AI 단어장 추출을 사용하려면 <strong>Google AI Studio Gemini API 키</strong>가 필요합니다. 입력한 키는 현재 브라우저에만 안전하게 저장됩니다.
-        </p>
-        <div>
-          <label for="gemini-api-key-input" class="block text-xs font-extrabold text-slate-700 mb-1.5">API Key</label>
-          <input id="gemini-api-key-input" type="password" placeholder="AIzaSy..." autocomplete="off" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-sm font-mono text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
-        </div>
-      </div>
-      <div class="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
-        <button id="btn-cancel-api-key-modal" type="button" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs sm:text-sm transition">취소</button>
-        <button id="btn-save-api-key" type="button" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition">저장 후 바로 분석하기</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     /**
      * =========================================================================
@@ -596,22 +553,19 @@
 
     // Application State
     const ACTIVITY_LOG_STORAGE_KEY = 'smart_vocab_test_activity_logs_v1';
-    const ACCESS_LOG_STORAGE_KEY = 'smart_vocab_test_access_logs_v1';
-    const GEMINI_API_KEY_STORAGE_KEY = 'smart_vocab_gemini_api_key_v1';
 
-    function getStoredGeminiApiKey() {
+    function loadPersistedActivityLogs() {
       try {
-        return (window.localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || '').trim();
+        const raw = window.localStorage.getItem(ACTIVITY_LOG_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .filter(item => item && typeof item.action === 'string' && typeof item.timestamp === 'string')
+          .map(item => ({ action: item.action, timestamp: item.timestamp }));
       } catch (err) {
-        return '';
-      }
-    }
-
-    function setStoredGeminiApiKey(key) {
-      try {
-        window.localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, String(key || '').trim());
-      } catch (err) {
-        console.warn('Failed to save API key:', err);
+        console.warn('Failed to load persisted activity logs:', err);
+        return [];
       }
     }
 
@@ -623,58 +577,18 @@
       }
     }
 
-    function loadPersistedAccessLogs() {
-      try {
-        const raw = window.localStorage.getItem(ACCESS_LOG_STORAGE_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return [];
-        return parsed
-          .filter(item => item && typeof item.timestamp === 'string')
-          .map(item => ({ timestamp: item.timestamp }));
-      } catch (err) {
-        console.warn('Failed to load persisted access logs:', err);
-        return [];
-      }
-    }
-
-    function mergeLegacyAccessLogsIntoActivity(existingActivityLogs) {
-      const legacyAccessLogs = loadPersistedAccessLogs();
-      if (legacyAccessLogs.length === 0) return existingActivityLogs;
-
-      const existingKeys = new Set(
-        existingActivityLogs.map(item => `${item.action}|||${item.timestamp}`)
-      );
-
-      const merged = [...existingActivityLogs];
-      legacyAccessLogs.forEach(entry => {
-        const action = '웹 접속';
-        const key = `${action}|||${entry.timestamp}`;
-        if (!existingKeys.has(key)) {
-          existingKeys.add(key);
-          merged.push({ action, timestamp: entry.timestamp });
-        }
-      });
-
-      merged.sort((a, b) => parseLogTimestampToMs(a.timestamp) - parseLogTimestampToMs(b.timestamp));
-      return merged;
-    }
-
     const state = {
-      selectedFiles: [],      // File objects selected by user
-      vocabulary: [],         // [{ id, word, meaning }]
-      questions: [],          // [{ qNum, wordId, word, meaning, mode: 'word'|'meaning', userAnswer: '', isCorrect: null }]
+      selectedFiles: [],       // File objects selected by user
+      vocabulary: [],          // [{ id, word, meaning }]
+      questions: [],           // [{ qNum, wordId, word, meaning, mode: 'word'|'meaning', userAnswer: '', isCorrect: null }]
       detectedTitle: '영단어 테스트',
-      hasStartedSolving: false, // Lock question editor once user starts typing/solving
+      hasStartedSolving: false,// Lock question editor once user starts typing/solving
       isGraded: false,
-      gradeSummary: null,     // { score, correctCount, wrongCount, total, timestamp }
-      answerKeyOpenCount: 0,  // Counter for 정답지 보기
-      resetCount: 0,          // Counter for 초기화
-      activityLogs: []        // Unified persistent array of { action, timestamp }
+      gradeSummary: null,      // { score, correctCount, wrongCount, total, timestamp }
+      answerKeyOpenCount: 0,   // Counter for 정답지 보기
+      resetCount: 0,           // Counter for 초기화
+      activityLogs: loadPersistedActivityLogs() // Persistent array of { action, timestamp }
     };
-
-    state.activityLogs = mergeLegacyAccessLogsIntoActivity(loadPersistedActivityLogs());
-    savePersistedActivityLogs(state.activityLogs);
 
     // DOM Elements Reference
     const els = {
@@ -688,9 +602,6 @@
       extractionLoading: document.getElementById('extraction-loading'),
       loadingTitle: document.getElementById('loading-title'),
       loadingSub: document.getElementById('loading-sub'),
-      uploadAccessLogSection: document.getElementById('upload-access-log-section'),
-      uploadAccessLogContainer: document.getElementById('upload-access-log-container'),
-
       btnLoadSample: document.getElementById('btn-load-sample'),
       btnOpenWordEditor: document.getElementById('btn-open-word-editor'),
       wordCountBadge: document.getElementById('word-count-badge'),
@@ -730,6 +641,7 @@
       btnAnswerKeyBottom: document.getElementById('btn-answer-key-bottom'),
       countAnswerKey: document.getElementById('count-answer-key'),
       countAnswerKeyBottom: document.getElementById('count-answer-key-bottom'),
+
       btnEditQuestionsToolbar: document.getElementById('btn-edit-questions-toolbar'),
       btnResetTest: document.getElementById('btn-reset-test'),
       btnResetTestBottom: document.getElementById('btn-reset-test-bottom'),
@@ -774,13 +686,7 @@
 
       toastBanner: document.getElementById('toast-banner'),
       toastContent: document.getElementById('toast-content'),
-      toastMessage: document.getElementById('toast-message'),
-
-      apiKeyModal: document.getElementById('api-key-modal'),
-      geminiApiKeyInput: document.getElementById('gemini-api-key-input'),
-      btnCloseApiKeyModal: document.getElementById('btn-close-api-key-modal'),
-      btnCancelApiKeyModal: document.getElementById('btn-cancel-api-key-modal'),
-      btnSaveApiKey: document.getElementById('btn-save-api-key')
+      toastMessage: document.getElementById('toast-message')
     };
 
     // Utility: Format current date/time as YYYY-MM-DD HH:MM:SS
@@ -869,7 +775,7 @@
     function getLogRowColorClass(actionText) {
       const text = String(actionText || '').replace(/^\[[^\]]+\]\s*/, '');
       if (text.startsWith('채점완료')) {
-        return 'bg-lime-50/95 border-lime-300 text-lime-950';
+        return 'bg-emerald-50/90 border-emerald-200 text-emerald-900';
       }
       if (text.startsWith('정답지 보기')) {
         return 'bg-amber-50/90 border-amber-200 text-amber-900';
@@ -877,13 +783,7 @@
       if (text.startsWith('문제 초기화')) {
         return 'bg-rose-50/90 border-rose-200 text-rose-900';
       }
-      if (text.startsWith('문제 출제')) {
-        return 'bg-violet-50/90 border-violet-200 text-violet-900';
-      }
-      if (text.startsWith('웹 접속')) {
-        return 'bg-cyan-50/90 border-cyan-200 text-cyan-900';
-      }
-      return 'bg-slate-100/90 border-slate-300 text-slate-800';
+      return 'bg-indigo-50/80 border-indigo-200 text-indigo-900';
     }
 
     function renderActivityLogs() {
@@ -907,39 +807,6 @@
         })
         .join('');
       els.activityLogContainer.scrollTop = 0;
-
-      if (els.uploadAccessLogContainer) {
-        els.uploadAccessLogContainer.innerHTML = newestFirstLogs
-          .map((log) => {
-            const rowColorClass = getLogRowColorClass(log.action);
-            return `
-              <div class="flex items-center justify-between py-1.5 px-2.5 rounded border ${rowColorClass}">
-                <div class="flex items-center gap-2">
-                  <span class="text-[11px] font-bold opacity-70">#${log.seqNum}</span>
-                  <span class="font-bold">${escapeHtml(log.action)}</span>
-                </div>
-                <span class="font-mono text-[11px] font-semibold opacity-80">${log.timestamp}</span>
-              </div>
-            `;
-          })
-          .join('');
-        els.uploadAccessLogContainer.scrollTop = 0;
-      }
-    }
-
-    function recordAndRenderAccessLogs(shouldAppendNewVisit = false) {
-      if (shouldAppendNewVisit) {
-        appendActivityLog('웹 접속');
-      } else {
-        renderActivityLogs();
-      }
-    }
-
-    function revealUploadAccessLogsAfterAuth() {
-      if (els.uploadAccessLogSection) {
-        els.uploadAccessLogSection.classList.remove('hidden');
-      }
-      renderActivityLogs();
     }
 
     function escapeHtml(str) {
@@ -967,9 +834,11 @@
         if (beforeText) {
           result += `<span>${escapeHtml(beforeText)}</span>`;
         }
+
         const matchedToken = match[0];
         const leadingSpace = matchedToken.startsWith(' ') ? ' ' : '';
         const cleanPos = matchedToken.trim().replace(/^[\[(]|[\])]$/g, '');
+
         result += `${leadingSpace}<span class="export-badge-fix inline-flex items-center px-2 py-0.5 mr-1 rounded-md text-[11px] font-extrabold bg-violet-100 text-violet-800 border border-violet-200 align-middle whitespace-nowrap">${escapeHtml(cleanPos)}</span>`;
         lastIndex = posRegex.lastIndex;
       }
@@ -1153,7 +1022,7 @@
    - 예문, 발음기호, 어원 설명, 페이지 번호는 제외하세요.
    - 한 단어에 여러 품사·뜻이 적혀 있다면 사진에 나온 순서와 품사 기호를 유지한 채 하나의 문자열로 합치세요.
    - 중복된 영단어가 있다면 하나로 합치세요.
-        `.trim();
+`;
 
         const payload = {
           contents: [
@@ -1191,15 +1060,8 @@
           }
         };
 
-        const apiKey = getStoredGeminiApiKey();
-        const isExternalHost = !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname) && !window.location.hostname.includes('googleusercontent') && !window.location.hostname.includes('webcontainer');
-        if (!apiKey && isExternalHost) {
-          const authErr = new Error('API key required');
-          authErr.isApiKeyError = true;
-          throw authErr;
-        }
-
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
         // Exponential backoff fetch
         let responseData = null;
@@ -1212,18 +1074,11 @@
               body: JSON.stringify(payload)
             });
             if (!res.ok) {
-              const errBody = await res.json().catch(() => ({}));
-              const apiErrMsg = errBody?.error?.message || '';
-              const authError = res.status === 400 || res.status === 401 || res.status === 403 || /api key/i.test(apiErrMsg);
-              const err = new Error(apiErrMsg || `HTTP ${res.status}`);
-              err.isApiKeyError = authError;
-              err.status = res.status;
-              throw err;
+              throw new Error(`HTTP ${res.status}`);
             }
             responseData = await res.json();
             break;
           } catch (err) {
-            if (err && err.isApiKeyError) throw err;
             if (attempt === delays.length) throw err;
             await new Promise(r => setTimeout(r, delays[attempt]));
           }
@@ -1270,20 +1125,12 @@
         els.testTitleInput.value = state.detectedTitle;
         updateWordCountUI();
         generateMixedTestSheet(true);
-        appendActivityLog(`[${state.detectedTitle}] 문제 출제 (총${cleanedVocab.length}문항)`);
         showToast(`총 ${cleanedVocab.length}개의 영단어를 추출하여 테스트지를 생성했습니다!`, 'success');
 
       } catch (error) {
         console.error('Extraction error:', error);
         const hasRawDng = state.selectedFiles.some(f => /\.dng$/i.test(f.name));
-        if (error && error.isApiKeyError) {
-          showToast('외부 웹 환경에서는 Gemini API 키 설정이 필요합니다. 키를 입력해주세요.', 'warning');
-          if (els.apiKeyModal && els.geminiApiKeyInput) {
-            els.geminiApiKeyInput.value = getStoredGeminiApiKey();
-            els.apiKeyModal.classList.remove('hidden');
-            els.geminiApiKeyInput.focus();
-          }
-        } else if (hasRawDng) {
+        if (hasRawDng) {
           showToast('RAW(.dng) 사진은 용량이 크거나 브라우저에서 제한될 수 있습니다. 일반 사진(JPG/HEIC)으로 다시 시도해 주세요.', 'error');
         } else {
           showToast('이미지 분석 중 오류가 발생했습니다. 네트워크 상태를 확인하거나 샘플 데이터로 테스트해보세요.', 'error');
@@ -1296,31 +1143,6 @@
     }
 
     els.btnExtractWords.addEventListener('click', extractWordsFromImages);
-
-    if (els.btnCloseApiKeyModal) {
-      els.btnCloseApiKeyModal.addEventListener('click', () => els.apiKeyModal.classList.add('hidden'));
-    }
-    if (els.btnCancelApiKeyModal) {
-      els.btnCancelApiKeyModal.addEventListener('click', () => els.apiKeyModal.classList.add('hidden'));
-    }
-    if (els.apiKeyModal) {
-      els.apiKeyModal.addEventListener('click', (e) => {
-        if (e.target === els.apiKeyModal) els.apiKeyModal.classList.add('hidden');
-      });
-    }
-    if (els.btnSaveApiKey) {
-      els.btnSaveApiKey.addEventListener('click', () => {
-        const keyVal = (els.geminiApiKeyInput?.value || '').trim();
-        if (!keyVal) {
-          showToast('Gemini API 키를 입력해주세요.', 'warning');
-          return;
-        }
-        setStoredGeminiApiKey(keyVal);
-        els.apiKeyModal.classList.add('hidden');
-        showToast('API 키가 저장되었습니다. 이미지 분석을 다시 시작합니다.', 'success');
-        extractWordsFromImages();
-      });
-    }
 
     // Sample Vocabulary Loader (Includes Part-of-Speech tags just like textbook photos)
     els.btnLoadSample.addEventListener('click', () => {
@@ -1351,7 +1173,6 @@
       els.testTitleInput.value = state.detectedTitle;
       updateWordCountUI();
       generateMixedTestSheet(true);
-      appendActivityLog(`[${state.detectedTitle}] 문제 출제 (총${sampleVocab.length}문항)`);
       showToast('샘플 단어장(Day 01 · 20단어)으로 테스트지를 생성했습니다.', 'success');
     });
 
@@ -1456,14 +1277,14 @@
             cardStateClass = 'border-emerald-400 bg-emerald-50/40';
             statusBadgeHtml = `
               <span class="export-badge-fix whitespace-nowrap shrink-0 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 select-none">
-                ✓ 정답
+                O 정답
               </span>
             `;
           } else {
             cardStateClass = 'border-rose-400 bg-rose-50/40';
             statusBadgeHtml = `
               <span class="export-badge-fix whitespace-nowrap shrink-0 px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-100 text-rose-800 border border-rose-300 select-none">
-                ✕ 오답
+                X 오답
               </span>
             `;
             correctionFeedbackHtml = `
@@ -1527,7 +1348,6 @@
             updateEditButtonsLockState();
           }
         });
-
         input.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -1567,12 +1387,12 @@
       } else {
         const targetMeanings = question.meaning
           .replace(/\[[^\]]+\]/g, ',')
-          .split(/[,;/|]/)
+          .split(/[,;/·|]/)
           .map(m => normalizeText(m))
           .filter(Boolean);
 
         const userMeanings = userRaw
-          .split(/[,;/|]/)
+          .split(/[,;/·|]/)
           .map(m => normalizeText(m))
           .filter(Boolean);
 
@@ -1603,10 +1423,8 @@
       state.isGraded = true;
       const gradedTime = getFormattedDateTime();
       recalculateAndRenderScores(true, gradedTime);
-
       const { total, correctCount, wrongCount } = state.gradeSummary;
       appendActivityLog(`채점완료 (총 ${total}문제 / 정답 ${correctCount}개 / 오답 ${wrongCount}개)`);
-
       renderQuestionCards();
       showToast('채점이 완료되었습니다! 상단과 하단에서 정답률을 확인하세요.', 'success');
     }
@@ -1648,9 +1466,10 @@
       state.answerKeyOpenCount += 1;
       els.countAnswerKey.textContent = state.answerKeyOpenCount;
       els.countAnswerKeyBottom.textContent = state.answerKeyOpenCount;
+
       appendActivityLog(`정답지 보기 (${state.answerKeyOpenCount}회차)`);
 
-      els.answerKeyModalTitle.textContent = `${els.testTitleInput.value || '영단어 테스트'} - 정답지`;
+      els.answerKeyModalTitle.textContent = `${els.testTitleInput.value || '영단어 테스트'} — 정답지`;
       els.answerKeyList.innerHTML = state.questions.map(q => `
         <div class="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/70">
           <div class="flex items-center gap-2 min-w-0">
@@ -1682,6 +1501,7 @@
       state.resetCount += 1;
       els.countReset.textContent = state.resetCount;
       els.countResetBottom.textContent = state.resetCount;
+
       appendActivityLog(`문제 초기화 (${state.resetCount}회차)`);
 
       generateMixedTestSheet(false);
@@ -1825,7 +1645,7 @@
       closeWordEditorModal();
       generateMixedTestSheet(false);
       appendActivityLog(`추출 문제 수정 후 재출제 (${edited.length}문항)`);
-      showToast('수정된 단어로 50:50 혼합 재출제가 완료되었습니다.', 'success');
+      showToast(`수정된 단어로 50:50 혼합 재출제가 완료되었습니다.`, 'success');
     });
 
     // =========================================================================
@@ -1857,11 +1677,12 @@
       const activityLogLines = orderedLogs.length > 0
         ? orderedLogs.map((log) => `#${log.seqNum} ${log.action} (${log.timestamp})`)
         : ['기록된 활동 일시가 없습니다.'];
-      const activityLogText = activityLogLines.map(line => `${line}`).join('\n');
+      const activityLogText = activityLogLines.map(line => `- ${line}`).join('\n');
 
       // Build share message without detailed grading lines and with newline-separated activity logs
       const buildShareMessage = (headerLines) => [
         ...headerLines,
+        ``,
         `[테스트지 사용 및 열람 일시 기록]`,
         activityLogText
       ].join('\n');
@@ -1870,15 +1691,16 @@
         const { score, correctCount, wrongCount, timestamp } = state.gradeSummary;
         const gradedLines = state.questions.map(q => formatQuestionSummaryLine(q));
         const gradedLinesText = gradedLines.join('\n');
-
         const fullTextReport = [
           `[영단어 테스트지 결과 요약 리포트]`,
           `제목: ${title}`,
           `응시자: ${studentName} | ${timestamp}`,
           `문항 구성: 총 ${total}문항 (단어쓰기 ${wordModeTotal} / 뜻쓰기 ${meaningModeTotal})`,
           `채점 결과 요약: 정답 ${correctCount}개 / 오답 ${wrongCount}개 / 정답률 ${score}%`,
+          ``,
           `[채점 결과]`,
           gradedLinesText,
+          ``,
           `[테스트지 사용 및 열람 일시 기록]`,
           activityLogText
         ].join('\n');
@@ -1914,6 +1736,7 @@
         `응시자: ${studentName} | 생성/출력: ${nowStr}`,
         `문항 구성: 총 ${total}문항 (단어쓰기 ${wordModeTotal} / 뜻쓰기 ${meaningModeTotal})`,
         `풀이 현황: ${answeredCount}/${total}문항 입력 (채점 전)`,
+        ``,
         `[테스트지 사용 및 열람 일시 기록]`,
         activityLogText
       ].join('\n');
@@ -1971,7 +1794,6 @@
             const promptDisplay = isWordMode ? formatMeaningWithPosBadges(q.meaning) : escapeHtml(q.word);
             const answerDisplay = isWordMode ? escapeHtml(q.word) : formatMeaningWithPosBadges(q.meaning);
             const userAnswerDisplay = (q.userAnswer || '').trim() ? escapeHtml(q.userAnswer) : '미입력';
-
             return `
               <div class="flex flex-wrap items-center gap-1.5 py-1 px-2 rounded bg-white border ${rowBorderClass}">
                 <span class="font-extrabold text-slate-900">${q.qNum}번</span>
@@ -2111,14 +1933,13 @@
 
             const origInputs = sheetEl.querySelectorAll('input');
             const clonedInputs = clonedSheet.querySelectorAll('input');
+
             origInputs.forEach((orig, i) => {
               const clonedInput = clonedInputs[i];
               if (!clonedInput) return;
-
               const val = orig.value;
               const placeholder = orig.getAttribute('placeholder') || '';
               const isStudentName = orig.id === 'student-name-input';
-
               const div = clonedDoc.createElement('div');
               div.className = clonedInput.className;
               div.style.display = 'table';
@@ -2144,7 +1965,6 @@
                 textSpan.style.color = '#94a3b8';
                 textSpan.style.fontWeight = '500';
               }
-
               div.appendChild(textSpan);
               clonedInput.parentNode.replaceChild(div, clonedInput);
             });
@@ -2175,7 +1995,6 @@
 
               const rawText = badge.textContent.trim();
               badge.textContent = '';
-
               const inner = clonedDoc.createElement('span');
               inner.className = 'export-badge-text';
               inner.textContent = rawText;
@@ -2186,7 +2005,6 @@
               inner.style.whiteSpace = 'nowrap';
               inner.style.position = 'relative';
               inner.style.top = '-0.22em';
-
               badge.appendChild(inner);
             });
 
@@ -2199,7 +2017,6 @@
               row.style.display = 'flex';
               row.style.alignItems = 'center';
               row.style.justifyContent = 'space-between';
-
               row.querySelectorAll('.export-log-cell').forEach(cell => {
                 cell.style.display = 'inline-flex';
                 cell.style.alignItems = 'center';
@@ -2266,6 +2083,7 @@
       const includeSummary = els.includeExportSummaryCheckbox ? els.includeExportSummaryCheckbox.checked : true;
 
       closeSaveLocationPopup();
+
       els.btnExport.disabled = true;
       if (els.btnExportBottom) els.btnExportBottom.disabled = true;
       els.btnExportText.textContent = '파일 생성 중...';
@@ -2326,17 +2144,8 @@
           return;
         }
 
-        // Clipboard fallback compatible with iFrame restrictions
-        const tempTextarea = document.createElement('textarea');
-        tempTextarea.value = messageToSend;
-        tempTextarea.style.position = 'fixed';
-        tempTextarea.style.opacity = '0';
-        document.body.appendChild(tempTextarea);
-        tempTextarea.select();
-        const copied = document.execCommand('copy');
-        document.body.removeChild(tempTextarea);
-
-        if (copied) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(messageToSend);
           showToast('요약 리포트 내용이 클립보드에 복사되었습니다. 원하는 곳에 붙여넣어 공유하세요!', 'success');
         } else {
           showToast('이 브라우저에서는 공유 기능을 지원하지 않습니다. 저장하기를 이용해 주세요.', 'warning');
@@ -2384,6 +2193,7 @@
     const pwModal = document.getElementById('password-gate-modal');
     const pwInput = document.getElementById('gate-pw-input');
     const pwError = document.getElementById('gate-pw-error');
+
     let isPwAuthenticated = false;
     let isHandlingPwInput = false;
 
@@ -2401,7 +2211,6 @@
         pwModal.classList.add('hidden');
         pwModal.style.display = 'none';
       }
-      revealUploadAccessLogsAfterAuth();
     }
 
     function focusPwInput() {
@@ -2416,7 +2225,6 @@
     }
 
     if (pwInput && pwModal) {
-      recordAndRenderAccessLogs(true);
       renderActivityLogs();
       focusPwInput();
 
@@ -2425,15 +2233,18 @@
           e.target.value = '';
           return;
         }
+
         isHandlingPwInput = true;
         try {
           const digitsOnly = String(e.target.value || '').replace(/\D/g, '').slice(0, 4);
           if (e.target.value !== digitsOnly) {
             e.target.value = digitsOnly;
           }
+
           if (digitsOnly.length > 0 && pwError) {
             pwError.classList.add('hidden');
           }
+
           if (digitsOnly.length === 4) {
             if (digitsOnly === ACCESS_PW) {
               lockAndHidePasswordModal();
