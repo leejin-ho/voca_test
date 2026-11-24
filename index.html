@@ -559,6 +559,34 @@
     </div>
   </div>
 
+  <!-- Gemini API Key Setup Modal (Shown only when running externally without injected API key) -->
+  <div id="api-key-modal" class="fixed inset-0 z-50 hidden bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-indigo-50/70">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+          <h3 class="text-base font-extrabold text-slate-900">Gemini API 키 설정</h3>
+        </div>
+        <button id="btn-close-api-key-modal" type="button" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200/70 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-slate-600 leading-relaxed">
+          외부 웹 주소(GitHub Pages 등)에서 AI 단어장 추출을 사용하려면 <strong>Google AI Studio Gemini API 키</strong>가 필요합니다. 입력한 키는 현재 브라우저에만 안전하게 저장됩니다.
+        </p>
+        <div>
+          <label for="gemini-api-key-input" class="block text-xs font-extrabold text-slate-700 mb-1.5">API Key</label>
+          <input id="gemini-api-key-input" type="password" placeholder="AIzaSy..." autocomplete="off" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-sm font-mono text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+        </div>
+      </div>
+      <div class="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+        <button id="btn-cancel-api-key-modal" type="button" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs sm:text-sm transition">취소</button>
+        <button id="btn-save-api-key" type="button" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm transition">저장 후 바로 분석하기</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     /**
      * =========================================================================
@@ -569,19 +597,21 @@
     // Application State
     const ACTIVITY_LOG_STORAGE_KEY = 'smart_vocab_test_activity_logs_v1';
     const ACCESS_LOG_STORAGE_KEY = 'smart_vocab_test_access_logs_v1';
+    const GEMINI_API_KEY_STORAGE_KEY = 'smart_vocab_gemini_api_key_v1';
 
-    function loadPersistedActivityLogs() {
+    function getStoredGeminiApiKey() {
       try {
-        const raw = window.localStorage.getItem(ACTIVITY_LOG_STORAGE_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return [];
-        return parsed
-          .filter(item => item && typeof item.action === 'string' && typeof item.timestamp === 'string')
-          .map(item => ({ action: item.action, timestamp: item.timestamp }));
+        return (window.localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || '').trim();
       } catch (err) {
-        console.warn('Failed to load persisted activity logs:', err);
-        return [];
+        return '';
+      }
+    }
+
+    function setStoredGeminiApiKey(key) {
+      try {
+        window.localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, String(key || '').trim());
+      } catch (err) {
+        console.warn('Failed to save API key:', err);
       }
     }
 
@@ -744,7 +774,13 @@
 
       toastBanner: document.getElementById('toast-banner'),
       toastContent: document.getElementById('toast-content'),
-      toastMessage: document.getElementById('toast-message')
+      toastMessage: document.getElementById('toast-message'),
+
+      apiKeyModal: document.getElementById('api-key-modal'),
+      geminiApiKeyInput: document.getElementById('gemini-api-key-input'),
+      btnCloseApiKeyModal: document.getElementById('btn-close-api-key-modal'),
+      btnCancelApiKeyModal: document.getElementById('btn-cancel-api-key-modal'),
+      btnSaveApiKey: document.getElementById('btn-save-api-key')
     };
 
     // Utility: Format current date/time as YYYY-MM-DD HH:MM:SS
@@ -1148,15 +1184,8 @@
                     },
                     required: ['word', 'meaning']
                   }
-                }
-              },
-              required: ['detectedTitle', 'words']
-            }
-          }
-        };
-
-        const apiKey = "";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        const apiKey = getStoredGeminiApiKey();
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(apiKey)}`;
 
         // Exponential backoff fetch
         let responseData = null;
@@ -1169,11 +1198,18 @@
               body: JSON.stringify(payload)
             });
             if (!res.ok) {
-              throw new Error(`HTTP ${res.status}`);
+              const errBody = await res.json().catch(() => ({}));
+              const apiErrMsg = errBody?.error?.message || '';
+              const authError = res.status === 400 || res.status === 401 || res.status === 403 || /api key/i.test(apiErrMsg);
+              const err = new Error(apiErrMsg || `HTTP ${res.status}`);
+              err.isApiKeyError = authError;
+              err.status = res.status;
+              throw err;
             }
             responseData = await res.json();
             break;
           } catch (err) {
+            if (err && err.isApiKeyError) throw err;
             if (attempt === delays.length) throw err;
             await new Promise(r => setTimeout(r, delays[attempt]));
           }
@@ -1226,7 +1262,14 @@
       } catch (error) {
         console.error('Extraction error:', error);
         const hasRawDng = state.selectedFiles.some(f => /\.dng$/i.test(f.name));
-        if (hasRawDng) {
+        if (error && error.isApiKeyError) {
+          showToast('외부 웹 환경에서는 Gemini API 키 설정이 필요합니다. 키를 입력해주세요.', 'warning');
+          if (els.apiKeyModal && els.geminiApiKeyInput) {
+            els.geminiApiKeyInput.value = getStoredGeminiApiKey();
+            els.apiKeyModal.classList.remove('hidden');
+            els.geminiApiKeyInput.focus();
+          }
+        } else if (hasRawDng) {
           showToast('RAW(.dng) 사진은 용량이 크거나 브라우저에서 제한될 수 있습니다. 일반 사진(JPG/HEIC)으로 다시 시도해 주세요.', 'error');
         } else {
           showToast('이미지 분석 중 오류가 발생했습니다. 네트워크 상태를 확인하거나 샘플 데이터로 테스트해보세요.', 'error');
@@ -1239,6 +1282,31 @@
     }
 
     els.btnExtractWords.addEventListener('click', extractWordsFromImages);
+
+    if (els.btnCloseApiKeyModal) {
+      els.btnCloseApiKeyModal.addEventListener('click', () => els.apiKeyModal.classList.add('hidden'));
+    }
+    if (els.btnCancelApiKeyModal) {
+      els.btnCancelApiKeyModal.addEventListener('click', () => els.apiKeyModal.classList.add('hidden'));
+    }
+    if (els.apiKeyModal) {
+      els.apiKeyModal.addEventListener('click', (e) => {
+        if (e.target === els.apiKeyModal) els.apiKeyModal.classList.add('hidden');
+      });
+    }
+    if (els.btnSaveApiKey) {
+      els.btnSaveApiKey.addEventListener('click', () => {
+        const keyVal = (els.geminiApiKeyInput?.value || '').trim();
+        if (!keyVal) {
+          showToast('Gemini API 키를 입력해주세요.', 'warning');
+          return;
+        }
+        setStoredGeminiApiKey(keyVal);
+        els.apiKeyModal.classList.add('hidden');
+        showToast('API 키가 저장되었습니다. 이미지 분석을 다시 시작합니다.', 'success');
+        extractWordsFromImages();
+      });
+    }
 
     // Sample Vocabulary Loader (Includes Part-of-Speech tags just like textbook photos)
     els.btnLoadSample.addEventListener('click', () => {
