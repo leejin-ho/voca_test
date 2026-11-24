@@ -173,14 +173,14 @@
 
       <!-- Dropzone -->
       <label id="drop-zone" for="image-input" class="group relative flex flex-col items-center justify-center w-full min-h-[150px] border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-2xl bg-slate-50/70 hover:bg-indigo-50/30 transition cursor-pointer p-5 text-center">
-        <input id="image-input" type="file" accept="image/*" multiple class="hidden" />
+        <input id="image-input" type="file" accept="image/*,.dng" multiple class="hidden" />
         <div class="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-indigo-600 group-hover:scale-105 transition mb-3">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
         </div>
         <p class="text-sm font-bold text-slate-800">클릭하여 단어장 사진을 선택하거나 여기에 드래그하세요</p>
-        <p class="text-xs text-slate-500 mt-1">여러 장의 사진을 한 번에 선택할 수 있습니다 (JPG, PNG, WEBP, HEIC)</p>
+        <p class="text-xs text-slate-500 mt-1">여러 장의 사진을 한 번에 선택할 수 있습니다 (JPG, PNG, WEBP, HEIC, DNG)</p>
       </label>
 
       <!-- Selected Images Preview Grid -->
@@ -210,7 +210,12 @@
               <p id="loading-sub" class="text-xs text-indigo-700 mt-0.5 truncate">단원 제목(Unit/Day/Lesson/과 등)과 표제어·품사·뜻을 추출 중입니다.</p>
             </div>
           </div>
-          <span id="loading-percent-text" class="text-sm sm:text-base font-extrabold text-indigo-700 font-en shrink-0">0%</span>
+          <div class="flex items-center gap-2.5 shrink-0">
+            <span id="loading-percent-text" class="text-sm sm:text-base font-extrabold text-indigo-700 font-en">0%</span>
+            <button id="btn-cancel-extraction" type="button" class="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-bold text-xs transition">
+              추출 취소
+            </button>
+          </div>
         </div>
         <div class="w-full h-2 rounded-full bg-indigo-100 overflow-hidden">
           <div id="loading-progress-bar" class="h-full bg-indigo-600 transition-all duration-150 rounded-full" style="width: 0%;"></div>
@@ -623,6 +628,7 @@
       btnExtractWords: document.getElementById('btn-extract-words'),
       btnExtractWordsText: document.getElementById('btn-extract-words-text'),
       extractionLoading: document.getElementById('extraction-loading'),
+      btnCancelExtraction: document.getElementById('btn-cancel-extraction'),
       loadingPercentText: document.getElementById('loading-percent-text'),
       loadingProgressBar: document.getElementById('loading-progress-bar'),
       uploadAccessLogSection: document.getElementById('upload-access-log-section'),
@@ -745,9 +751,20 @@
     let extractionProgressTimer = null;
     let currentExtractionPercent = 0;
     let targetExtractionPercent = 0;
+    let activeExtractionController = null;
+    let isExtractionCancelled = false;
+
+    function throwIfExtractionCancelled() {
+      if (isExtractionCancelled) {
+        const err = new Error('추출이 취소되었습니다.');
+        err.name = 'AbortError';
+        throw err;
+      }
+    }
 
     function setExtractionProgress(targetPct, statusSubText) {
-      targetExtractionPercent = Math.max(currentExtractionPercent, Math.min(100, Math.round(targetPct)));
+      if (isExtractionCancelled) return;
+      targetExtractionPercent = Math.max(currentExtractionPercent, Math.min(99, Math.round(targetPct)));
       if (els.loadingTitle) {
         els.loadingTitle.textContent = '사진 분석 및 문제지 생성중';
       }
@@ -756,6 +773,7 @@
       }
       if (!extractionProgressTimer) {
         extractionProgressTimer = setInterval(() => {
+          if (isExtractionCancelled) return;
           if (currentExtractionPercent < targetExtractionPercent) {
             const step = Math.max(1, Math.ceil((targetExtractionPercent - currentExtractionPercent) * 0.25));
             currentExtractionPercent = Math.min(targetExtractionPercent, currentExtractionPercent + step);
@@ -801,6 +819,27 @@
       if (els.loadingProgressBar) {
         els.loadingProgressBar.style.width = '0%';
       }
+    }
+
+    function cancelOngoingExtraction() {
+      isExtractionCancelled = true;
+      if (activeExtractionController) {
+        try {
+          activeExtractionController.abort();
+        } catch (e) {
+          // ignore abort errors
+        }
+        activeExtractionController = null;
+      }
+      resetExtractionProgress();
+      els.extractionLoading.classList.add('hidden');
+      els.btnExtractWords.disabled = false;
+      els.btnExtractWords.classList.remove('opacity-60', 'cursor-not-allowed');
+      showToast('사진 추출이 취소되었습니다.', 'info');
+    }
+
+    if (els.btnCancelExtraction) {
+      els.btnCancelExtraction.addEventListener('click', cancelOngoingExtraction);
     }
 
     function getCurrentSheetTitlePrefix() {
@@ -980,10 +1019,16 @@
     // =========================================================================
     // 1. MULTI-IMAGE UPLOAD & PREVIEW HANDLING
     // =========================================================================
+    function isSupportedImageFile(file) {
+      if (!file) return false;
+      if (file.type && file.type.startsWith('image/')) return true;
+      return /\.(jpe?g|png|webp|heic|heif|gif|bmp|dng)$/i.test(file.name || '');
+    }
+
     function handleFilesAdded(fileList) {
-      const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+      const files = Array.from(fileList).filter(isSupportedImageFile);
       if (files.length === 0) {
-        showToast('이미지 파일만 업로드할 수 있습니다.', 'warning');
+        showToast('이미지 파일(JPG, PNG, WEBP, HEIC, DNG 등)만 업로드할 수 있습니다.', 'warning');
         return;
       }
       state.selectedFiles = [...state.selectedFiles, ...files];
@@ -1002,18 +1047,29 @@
       els.imagePreviewGrid.innerHTML = '';
 
       state.selectedFiles.forEach((file, index) => {
-        const url = URL.createObjectURL(file);
+        const isDng = /\.dng$/i.test(file.name || '');
+        const url = isDng ? '' : URL.createObjectURL(file);
         const card = document.createElement('div');
         card.className = 'relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-xs';
-        card.innerHTML = `
-          <img src="${url}" alt="단어장 사진 ${index + 1}" class="w-full h-full object-cover" />
-          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1">
-            <p class="text-[10px] text-white font-semibold truncate">${escapeHtml(file.name)}</p>
-          </div>
-          <button type="button" data-idx="${index}" class="btn-remove-img absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold transition" title="삭제">
-            ✕
-          </button>
-        `;
+        card.innerHTML = isDng
+          ? `
+            <div class="w-full h-full flex flex-col items-center justify-center bg-slate-200/80 text-slate-700 p-2 text-center">
+              <span class="px-2 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-extrabold mb-1">DNG</span>
+              <span class="text-[10px] font-bold break-all line-clamp-2">${escapeHtml(file.name)}</span>
+            </div>
+            <button type="button" data-idx="${index}" class="btn-remove-img absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold transition" title="삭제">
+              ✕
+            </button>
+          `
+          : `
+            <img src="${url}" alt="단어장 사진 ${index + 1}" class="w-full h-full object-cover" />
+            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1">
+              <p class="text-[10px] text-white font-semibold truncate">${escapeHtml(file.name)}</p>
+            </div>
+            <button type="button" data-idx="${index}" class="btn-remove-img absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold transition" title="삭제">
+              ✕
+            </button>
+          `;
         els.imagePreviewGrid.appendChild(card);
       });
 
@@ -1061,11 +1117,98 @@
     // Helper: Resize & compress image to base64 JPEG (with safe fallback for iOS HEIC/DNG)
     function fileToCompressedBase64(file, maxDim = 1400, quality = 0.82) {
       return new Promise((resolve, reject) => {
+        throwIfExtractionCancelled();
+        const isDng = /\.dng$/i.test(file.name || '');
         const reader = new FileReader();
         reader.onload = () => {
+          if (isExtractionCancelled) {
+            const err = new Error('추출이 취소되었습니다.');
+            err.name = 'AbortError';
+            reject(err);
+            return;
+          }
           const rawDataUrl = reader.result;
-          const rawBase64 = typeof rawDataUrl === 'string' ? rawDataUrl.split(',')[1] : '';
-          const fallbackMime = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg';
+          const rawBase64 = typeof rawDataUrl === 'string' && rawDataUrl.includes(',')
+            ? rawDataUrl.split(',')[1]
+            : '';
+          const fallbackMime = isDng
+            ? 'image/jpeg'
+            : (file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg');
+
+          if (isDng && reader.result instanceof ArrayBuffer) {
+            try {
+              const bytes = new Uint8Array(reader.result);
+              // Search for embedded JPEG SOI (0xFF 0xD8) and EOI (0xFF 0xD9) inside DNG container
+              let bestStart = -1;
+              let bestEnd = -1;
+              for (let i = 0; i < bytes.length - 4; i++) {
+                if (bytes[i] === 0xFF && bytes[i + 1] === 0xD8 && bytes[i + 2] === 0xFF) {
+                  let endIdx = -1;
+                  for (let j = i + 4; j < bytes.length - 1; j++) {
+                    if (bytes[j] === 0xFF && bytes[j + 1] === 0xD9) {
+                      endIdx = j + 2;
+                    }
+                  }
+                  if (endIdx > i + 4096) {
+                    const size = endIdx - i;
+                    if (bestEnd === -1 || size > (bestEnd - bestStart)) {
+                      bestStart = i;
+                      bestEnd = endIdx;
+                    }
+                    break;
+                  }
+                }
+              }
+
+              if (bestStart !== -1 && bestEnd !== -1) {
+                const jpegSlice = bytes.slice(bestStart, bestEnd);
+                const jpegBlob = new Blob([jpegSlice], { type: 'image/jpeg' });
+                const previewImg = new Image();
+                const blobUrl = URL.createObjectURL(jpegBlob);
+                previewImg.onload = () => {
+                  try {
+                    let { width, height } = previewImg;
+                    if (width > maxDim || height > maxDim) {
+                      if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                      } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                      }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(previewImg, 0, 0, width, height);
+                    const outBase64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+                    URL.revokeObjectURL(blobUrl);
+                    resolve({ mimeType: 'image/jpeg', data: outBase64, isDng: true });
+                  } catch (canvasErr) {
+                    URL.revokeObjectURL(blobUrl);
+                    resolve({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
+                  }
+                };
+                previewImg.onerror = () => {
+                  URL.revokeObjectURL(blobUrl);
+                  resolve({ mimeType: 'image/jpeg', data: '', isDng: true, rawBytes: bytes });
+                };
+                previewImg.src = blobUrl;
+                return;
+              }
+
+              resolve({ mimeType: fallbackMime, data: '', isDng: true, rawBytes: bytes });
+              return;
+            } catch (dngErr) {
+              console.warn('DNG embedded JPEG scan error:', dngErr);
+            }
+          }
+
+          if (!rawBase64) {
+            reject(new Error('파일 읽기에 실패했습니다.'));
+            return;
+          }
 
           const img = new Image();
           img.onload = () => {
@@ -1106,8 +1249,160 @@
           img.src = rawDataUrl;
         };
         reader.onerror = () => reject(new Error('파일 읽기에 실패했습니다.'));
-        reader.readAsDataURL(file);
+        if (isDng && typeof file.arrayBuffer === 'function') {
+          reader.readAsArrayBuffer(file);
+        } else {
+          reader.readAsDataURL(file);
+        }
       });
+    }
+
+    function loadTesseractScript() {
+      return new Promise((resolve, reject) => {
+        throwIfExtractionCancelled();
+        if (window.Tesseract && typeof window.Tesseract.recognize === 'function') {
+          resolve(window.Tesseract);
+          return;
+        }
+        const existing = document.querySelector('script[data-ocr-lib="tesseract"]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve(window.Tesseract));
+          existing.addEventListener('error', () => reject(new Error('OCR 라이브러리 로드 실패')));
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        script.async = true;
+        script.setAttribute('data-ocr-lib', 'tesseract');
+        script.onload = () => resolve(window.Tesseract);
+        script.onerror = () => reject(new Error('OCR 라이브러리 로드 실패'));
+        document.head.appendChild(script);
+      });
+    }
+
+    function extractAsciiStringsFromDngBytes(rawBytes) {
+      if (!rawBytes || !(rawBytes instanceof Uint8Array)) return '';
+      const chunks = [];
+      let current = '';
+      const step = rawBytes.length > 4000000 ? 2 : 1;
+      for (let i = 0; i < rawBytes.length; i += step) {
+        const b = rawBytes[i];
+        if ((b >= 65 && b <= 90) || (b >= 97 && b <= 122) || (b >= 48 && b <= 57) || b === 32 || b === 45 || b === 39) {
+          current += String.fromCharCode(b);
+          if (current.length > 120) {
+            chunks.push(current);
+            current = '';
+          }
+        } else {
+          if (current.trim().length >= 3) {
+            chunks.push(current.trim());
+          }
+          current = '';
+        }
+      }
+      if (current.trim().length >= 3) chunks.push(current.trim());
+      return chunks.join('\n');
+    }
+
+    async function extractVocabularyViaLocalOcr(imageParts, onProgress) {
+      throwIfExtractionCancelled();
+      if (onProgress) onProgress(52, '브라우저 내장 OCR 엔진을 준비하고 있습니다...');
+      const Tesseract = await loadTesseractScript();
+      throwIfExtractionCancelled();
+
+      const combinedLines = [];
+      for (let i = 0; i < imageParts.length; i++) {
+        throwIfExtractionCancelled();
+        const part = imageParts[i];
+        const basePct = 55 + Math.round((i / imageParts.length) * 28);
+        if (onProgress) {
+          onProgress(basePct, `사진 ${i + 1}/${imageParts.length}장 문자 직접 인식 중...`);
+        }
+
+        let text = '';
+        if (part.inlineData && part.inlineData.data) {
+          const dataUrl = `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
+          const result = await Tesseract.recognize(dataUrl, 'eng+kor', {
+            logger: (info) => {
+              if (isExtractionCancelled) return;
+              if (info && info.status === 'recognizing text' && typeof info.progress === 'number' && onProgress) {
+                const stepPct = basePct + Math.round((info.progress / imageParts.length) * 28);
+                onProgress(Math.min(86, stepPct), `사진 ${i + 1}/${imageParts.length}장 문자 분석 중 (${Math.round(info.progress * 100)}%)`);
+              }
+            }
+          });
+          throwIfExtractionCancelled();
+          text = result?.data?.text || '';
+        } else if (part.inlineData && part.inlineData.rawBytes) {
+          text = extractAsciiStringsFromDngBytes(part.inlineData.rawBytes);
+        }
+
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if (trimmed) combinedLines.push(trimmed);
+        });
+      }
+
+      let detectedTitle = '';
+      const titlePattern = /(unit\s*\d+[^\n]*|day\s*\d+[^\n]*|lesson\s*\d+[^\n]*|chapter\s*\d+[^\n]*|part\s*\d+[^\n]*|제?\s*\d+\s*(?:과|강|단원)[^\n]*)/i;
+      for (const line of combinedLines) {
+        const match = line.match(titlePattern);
+        if (match) {
+          detectedTitle = match[0].trim();
+          break;
+        }
+      }
+
+      const words = [];
+      const seenWords = new Set();
+      const orphanEnglishWords = [];
+      const orphanKoreanMeanings = [];
+
+      for (let idx = 0; idx < combinedLines.length; idx++) {
+        const line = combinedLines[idx];
+        const cleanedLine = line.replace(/^\s*\d{1,3}[.)\s-]+/, '').trim();
+        const pairMatch = cleanedLine.match(/^([A-Za-z][A-Za-z\s'-]{1,35}?)\s+([\[(\uAC00-\uD7A3].+)$/);
+        if (pairMatch) {
+          const engWord = pairMatch[1].trim();
+          const korMeaning = pairMatch[2].trim();
+          const key = engWord.toLowerCase();
+          if (engWord.length >= 2 && korMeaning.length >= 1 && !seenWords.has(key)) {
+            seenWords.add(key);
+            words.push({ word: engWord, meaning: korMeaning });
+          }
+          continue;
+        }
+
+        const onlyEngMatch = cleanedLine.match(/^([A-Za-z][A-Za-z'-]{1,28})$/);
+        const nextLine = combinedLines[idx + 1] ? combinedLines[idx + 1].trim() : '';
+        if (onlyEngMatch && nextLine && /[\uAC00-\uD7A3]/.test(nextLine) && !/^[A-Za-z\s'-]{4,}$/.test(nextLine)) {
+          const engWord = onlyEngMatch[1].trim();
+          const key = engWord.toLowerCase();
+          if (!seenWords.has(key)) {
+            seenWords.add(key);
+            words.push({ word: engWord, meaning: nextLine });
+          }
+          continue;
+        }
+
+        if (/^[A-Za-z][A-Za-z'-]{2,24}$/.test(cleanedLine)) {
+          const k = cleanedLine.toLowerCase();
+          if (!seenWords.has(k) && !orphanEnglishWords.includes(cleanedLine)) {
+            orphanEnglishWords.push(cleanedLine);
+          }
+        } else if (/[\uAC00-\uD7A3]{2,}/.test(cleanedLine) && cleanedLine.length <= 45) {
+          orphanKoreanMeanings.push(cleanedLine);
+        }
+      }
+
+      if (words.length === 0 && orphanEnglishWords.length > 0) {
+        orphanEnglishWords.slice(0, 20).forEach((eng, i) => {
+          const matchedMeaning = orphanKoreanMeanings[i] || '단어 뜻 입력 필요';
+          words.push({ word: eng, meaning: matchedMeaning });
+        });
+      }
+
+      return { detectedTitle, words };
     }
 
     // =========================================================================
@@ -1119,6 +1414,8 @@
         return;
       }
 
+      isExtractionCancelled = false;
+      activeExtractionController = new AbortController();
       resetExtractionProgress();
       els.extractionLoading.classList.remove('hidden');
       els.btnExtractWords.disabled = true;
@@ -1126,24 +1423,77 @@
       setExtractionProgress(8, '업로드한 단어장 사진을 준비하고 있습니다...');
 
       try {
+        throwIfExtractionCancelled();
         const imageParts = [];
         const fileCount = state.selectedFiles.length;
         const targetDim = fileCount >= 3 ? 1150 : 1450;
         const targetQuality = fileCount >= 3 ? 0.76 : 0.84;
 
         for (let i = 0; i < state.selectedFiles.length; i++) {
+          throwIfExtractionCancelled();
           const file = state.selectedFiles[i];
           const prepPct = 8 + Math.round(((i + 0.5) / fileCount) * 27);
           setExtractionProgress(prepPct, `사진 ${i + 1}/${fileCount}장 전처리 및 최적화 중...`);
           const compressed = await fileToCompressedBase64(file, targetDim, targetQuality);
-          imageParts.push({
-            inlineData: {
-              mimeType: compressed.mimeType,
-              data: compressed.data
-            }
-          });
+          throwIfExtractionCancelled();
+          if (compressed.data) {
+            imageParts.push({
+              inlineData: {
+                mimeType: compressed.mimeType,
+                data: compressed.data
+              }
+            });
+          } else if (compressed.isDng && compressed.rawBytes) {
+            imageParts.push({
+              inlineData: {
+                mimeType: compressed.mimeType,
+                data: '',
+                rawBytes: compressed.rawBytes,
+                isDng: true
+              }
+            });
+          }
           const donePrepPct = 8 + Math.round(((i + 1) / fileCount) * 27);
           setExtractionProgress(donePrepPct, `사진 ${i + 1}/${fileCount}장 준비 완료`);
+        }
+
+        throwIfExtractionCancelled();
+        const hasDngFiles = state.selectedFiles.some(f => /\.dng$/i.test(f.name || ''));
+        const hasValidVisionParts = imageParts.some(p => p.inlineData && p.inlineData.data);
+        if (hasDngFiles && !hasValidVisionParts) {
+          const ocrResult = await extractVocabularyViaLocalOcr(imageParts, setExtractionProgress);
+          throwIfExtractionCancelled();
+          const seenDng = new Set();
+          const dngVocab = (ocrResult.words || [])
+            .map((item, idx) => ({
+              id: `v_dng_${Date.now()}_${idx}`,
+              word: (item.word || '').trim(),
+              meaning: (item.meaning || '').trim()
+            }))
+            .filter(item => {
+              if (!item.word || !item.meaning) return false;
+              const k = item.word.toLowerCase();
+              if (seenDng.has(k)) return false;
+              seenDng.add(k);
+              return true;
+            });
+
+          if (dngVocab.length > 0) {
+            const rawTitle = (ocrResult.detectedTitle || '').trim();
+            const titleKeywordsRegex = /(unit|day|lesson|chapter|part|과|강|단원)/i;
+            state.detectedTitle = rawTitle && titleKeywordsRegex.test(rawTitle) ? rawTitle : '영단어 테스트지';
+            state.vocabulary = dngVocab;
+            els.testTitleInput.value = state.detectedTitle;
+            updateExtractButtonLabel();
+            updateWordCountUI();
+            setExtractionProgress(96, '테스트지를 화면에 배치하고 있습니다...');
+            generateMixedTestSheet(true);
+            hideUploadAccessLogAfterSheetCreated();
+            appendActivityLog(`문제 출제 (총${dngVocab.length}문항)`);
+            completeExtractionProgress();
+            showToast(`DNG 사진에서 총 ${dngVocab.length}개의 영단어를 추출하여 테스트지를 생성했습니다!`, 'success');
+            return;
+          }
         }
 
         setExtractionProgress(42, '단원 제목(Unit/Day/Lesson/과 등)과 영단어·품사·뜻 분석 중...');
@@ -1206,39 +1556,59 @@
         const apiKey = "";
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-        // Exponential backoff fetch with live progress updates
+        // Wait until extraction completes (no retry count limit), cancellable anytime
         let responseData = null;
-        const delays = [1000, 2000, 4000, 8000];
         const softTicker = setInterval(() => {
-          if (targetExtractionPercent < 82) {
-            setExtractionProgress(targetExtractionPercent + 3, 'AI가 사진 속 영단어와 뜻을 인식하고 있습니다...');
+          if (isExtractionCancelled) return;
+          if (targetExtractionPercent < 88) {
+            setExtractionProgress(targetExtractionPercent + 2, '추출이 완료될 때까지 대기 중입니다...');
           }
-        }, 450);
+        }, 550);
 
         try {
-          for (let attempt = 0; attempt <= delays.length; attempt++) {
+          while (!isExtractionCancelled && !responseData) {
+            throwIfExtractionCancelled();
             try {
               const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: activeExtractionController ? activeExtractionController.signal : undefined
               });
+              throwIfExtractionCancelled();
               if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
               }
               responseData = await res.json();
               break;
             } catch (err) {
-              if (attempt === delays.length) throw err;
-              setExtractionProgress(Math.min(84, targetExtractionPercent + 4), `응답 대기 중... 재시도 (${attempt + 1}/${delays.length})`);
-              await new Promise(r => setTimeout(r, delays[attempt]));
+              if (isExtractionCancelled || (err && err.name === 'AbortError')) {
+                throw err;
+              }
+              setExtractionProgress(Math.min(88, targetExtractionPercent + 1), '사진 추출 완료 대기 중... (취소 가능)');
+              await new Promise((resolve, reject) => {
+                const waitId = setTimeout(() => {
+                  clearInterval(cancelPoll);
+                  resolve();
+                }, 1500);
+                const cancelPoll = setInterval(() => {
+                  if (isExtractionCancelled) {
+                    clearTimeout(waitId);
+                    clearInterval(cancelPoll);
+                    const abortErr = new Error('추출이 취소되었습니다.');
+                    abortErr.name = 'AbortError';
+                    reject(abortErr);
+                  }
+                }, 100);
+              });
             }
           }
         } finally {
           clearInterval(softTicker);
         }
 
-        setExtractionProgress(88, '추출된 영단어와 테스트 문항을 구성하고 있습니다...');
+        throwIfExtractionCancelled();
+        setExtractionProgress(90, '추출된 영단어와 테스트 문항을 구성하고 있습니다...');
 
         const rawJsonText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!rawJsonText) {
@@ -1289,14 +1659,19 @@
         showToast(`총 ${cleanedVocab.length}개의 영단어를 추출하여 테스트지를 생성했습니다!`, 'success');
 
       } catch (error) {
+        if (isExtractionCancelled || (error && error.name === 'AbortError')) {
+          return;
+        }
         console.error('Extraction error:', error);
         const hasRawDng = state.selectedFiles.some(f => /\.dng$/i.test(f.name));
         if (hasRawDng) {
-          showToast('RAW(.dng) 사진은 용량이 크거나 브라우저에서 제한될 수 있습니다. 일반 사진(JPG/HEIC)으로 다시 시도해 주세요.', 'error');
+          showToast('DNG 사진의 텍스트를 추출하지 못했습니다. 일반 사진(JPG/PNG/HEIC)으로 다시 시도하거나 직접 입력해주세요.', 'error');
         } else {
           showToast('이미지 분석 중 오류가 발생했습니다. 네트워크 상태를 확인하거나 샘플 데이터로 테스트해보세요.', 'error');
         }
       } finally {
+        activeExtractionController = null;
+        isExtractionCancelled = false;
         resetExtractionProgress();
         els.extractionLoading.classList.add('hidden');
         els.btnExtractWords.disabled = false;
